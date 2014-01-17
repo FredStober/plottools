@@ -45,3 +45,19 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 	if kwargs.get('fun'):
 		kwargs.get('fun')(base_ax)
 	savePlot(fig, fn)
+
+
+def doCMSPlot(fn, opts, plots, **kwargs):
+	opts.setdefault('title', 'CMS preliminary')
+	infostr = []
+	lumi = opts.get('lumi')
+	if lumi:
+		if lumi < 1000:
+			infostr.append(r'$\mathcal{L} = %.1f\,\mathrm{pb}^{-1}$' % lumi)
+		else:
+			infostr.append(r'$\mathcal{L} = %.1f\,\mathrm{fb}^{-1}$' % (lumi / 1000.))
+	if opts.get('cms'):
+		infostr.append(r'$\sqrt{s} = %s\,\mathrm{TeV}$' % opts.get('cms'))
+	if infostr:
+		opts.setdefault('infostr', str.join(' ', infostr))
+	doPlot(fn, opts, plots, **kwargs)

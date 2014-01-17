@@ -2,7 +2,7 @@ def drawAnnotation(ax, notelist, opts = {}):
 	for note in notelist:
 		if isinstance(note, str):
 			xp, yp, text = note.split(',', 2)
-			note = {'x': xp, 'y': float(yp), label: text}
+			note = {'x': xp, 'y': float(yp), 'label': text}
 			if xp.startswith('r'):
 				note.setdefault('ha', 'right')
 				note['x'] = float(xp[1:])
@@ -13,7 +13,7 @@ def drawAnnotation(ax, notelist, opts = {}):
 		tf = ax.transAxes
 		if note.get('transform') == 'data':
 			tf = ax.transData
-		ax.text(note.get('x', 0), note.get('y', 0), note[label],
+		ax.text(note.get('x', 0), note.get('y', 0), note['label'],
 			ha=note.get('ha', 'left'), va=note.get('va', 'center'), transform = tf, **opts)
 
 
