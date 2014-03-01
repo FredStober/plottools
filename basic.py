@@ -22,10 +22,11 @@ def mergeOpts(dict1, dict2):
 
 
 def getFigure(opts):
+	w = opts.get('width', 4.2)
 	if opts.get('square', False):
-		fig = matplotlib.pyplot.figure(figsize=(6*0.7,6*0.7))
+		fig = matplotlib.pyplot.figure(figsize=(w, w))
 	else:
-		fig = matplotlib.pyplot.figure(figsize=(8.4854*0.7,6*0.7))
+		fig = matplotlib.pyplot.figure(figsize=(numpy.sqrt(2)*w, w))
 	fig.subplots_adjust(
 		left=opts.get('left', 0.15),
 		right=1-opts.get('right', 0.05),
@@ -72,10 +73,12 @@ def setupAxis(ax, opts, xprefix = 'x', yprefix = 'y'):
 			for x in ax_int.get_ticklabels():
 				x.set_color(opts.get(prefix + 'color', 'black'))
 
-	ax.set_xlabel(opts.get(xprefix + 'label', 'x'), ha = "right", x = 1)
+	ax.set_xlabel(opts.get(xprefix + 'label', 'x'), ha = 'right', va = 'top', x = 1,
+		labelpad = opts.get(xprefix + 'pad', 14))
 	setupAxis_single(ax.xaxis, xprefix)
 
-	ax.set_ylabel(opts.get(yprefix + 'label', 'y'), va = "top", y = 1)
+	ax.set_ylabel(opts.get(yprefix + 'label', 'y'), ha = 'right', va = 'top', y = 1,
+		labelpad = opts.get(yprefix + 'pad', 24))
 	setupAxis_single(ax.yaxis, yprefix)
 
 	ax.grid(opts.get('grid', False))
@@ -104,10 +107,14 @@ def setupPlot(opts, **kwargs):
 
 
 def savePlot(fig, fn, output = ['png', 'pdf'], **kwargs):
-	print "saving plot", os.path.join(os.getcwd(), fn), output
+	dest = os.path.join(os.getcwd(), fn)
+	print 'saving plot', dest, output
+	if not os.path.exists(os.path.dirname(dest)):
+		os.makedirs(os.path.dirname(dest))
 	for ext in output:
-		fig.savefig("%s.%s" % (fn, ext), **kwargs)
+		fig.savefig('%s.%s' % (dest, ext), **kwargs)
 	fig.clear()
+	matplotlib.pyplot.close()
 
 
 def drawPlots(ax, plots, opts = {}, xy_switch = False):
