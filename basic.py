@@ -161,9 +161,10 @@ def drawPlots(ax, plots, opts = {}, xy_switch = False):
 			)
 
 		elif plotstyle == 'bars':
+			islog = (opts.get('yscale', 'linear') == 'log')
 			plot_raw['vis'] = ax.bar(plot_data['x'] - plot_data['xe'], plot_data['y'], 2 * plot_data['xe'],
 				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-				linewidth = plot.get('linewidth', 0),
+				log = True, linewidth = plot.get('linewidth', 0),
 			)
 
 		elif plotstyle == 'lines':

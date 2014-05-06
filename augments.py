@@ -38,3 +38,12 @@ def drawLines(ax, hlines = [], vlines = [], **kwargs):
 		ax.hlines(hline, ax.get_xlim()[0], ax.get_xlim()[1], **kwargs)
 	for vline in vlines:
 		ax.vlines(vline, ax.get_ylim()[0], ax.get_ylim()[1], **kwargs)
+
+
+def drawInfoText(opts, ax):
+	title_plot = opts.get('title', '')
+	if title_plot:
+		ax.text(0, 1.02, title_plot, transform=ax.transAxes, ha='left', va='bottom')
+	title_info = opts.get('infostr', '')
+	if title_info:
+		ax.text(1, 1.02, title_info, transform=ax.transAxes, ha='right', va='bottom')

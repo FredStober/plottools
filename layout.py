@@ -5,13 +5,7 @@ from augments import *
 def doPlot(fn, opts_raw, plots, **kwargs):
 	opts = mergeOpts(opts_raw, kwargs)
 	(fig, ax) = setupPlot(opts)
-
-	title_plot = opts.get('title', '')
-	if title_plot:
-		ax.text(0, 1.02, title_plot, transform=ax.transAxes, ha='left', va='bottom')
-	title_info = opts.get('infostr', '')
-	if title_info:
-		ax.text(1, 1.02, title_info, transform=ax.transAxes, ha='right', va='bottom')
+	drawInfoText(opts, ax)
 
 	base_ax = ax
 
@@ -47,7 +41,7 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 	savePlot(fig, fn)
 
 
-def doCMSPlot(fn, opts, plots, **kwargs):
+def setCMSsettings(opts):
 	opts.setdefault('title', 'CMS preliminary')
 	infostr = []
 	lumi = opts.get('lumi')
@@ -56,8 +50,73 @@ def doCMSPlot(fn, opts, plots, **kwargs):
 			infostr.append(r'$\mathcal{L} = %.1f\,\mathrm{pb}^{-1}$' % lumi)
 		else:
 			infostr.append(r'$\mathcal{L} = %.1f\,\mathrm{fb}^{-1}$' % (lumi / 1000.))
-	if opts.get('cms'):
-		infostr.append(r'$\sqrt{s} = %s\,\mathrm{TeV}$' % opts.get('cms'))
+	if opts.get('cme'):
+		infostr.append(r'$\sqrt{s} = %s\,\mathrm{TeV}$' % opts.get('cme'))
 	if infostr:
 		opts.setdefault('infostr', str.join(' ', infostr))
+
+
+def doCMSPlot(fn, opts, plots, **kwargs):
+	setCMSsettings(opts)
 	doPlot(fn, opts, plots, **kwargs)
+
+
+def get2DXYZ(opts, src):
+	def getAxisArray(prefix):
+		vsrc = opts.get('%ssrc' % prefix, prefix)
+		esrc = vsrc + 'e'
+		return numpy.array(list(src[vsrc] - src[esrc]) + [list(src[vsrc])[-1] + src[esrc][-1]])
+	x = getAxisArray('x')
+	y = getAxisArray('y')
+	z = src[opts.get('zsrc', 'z')]
+	if 'zrange' in opts:
+		zr = opts.get('zrange')
+		if zr[0] != None:
+			z = numpy.ma.masked_less(z, zr[0])
+		if zr[1] != None:
+			z = numpy.ma.masked_greater(z, zr[1])
+
+	zscale = opts.get('zscale', 'norm')
+	if zscale == 'norm':
+		norm = matplotlib.colors.Normalize(-1, 1)
+	elif zscale == 'log':
+		norm = matplotlib.colors.LogNorm(z.min(), z.max())
+	return (x, y, z, norm)
+
+
+def do2DPlot(fn, opts, src):
+#	if showErrors:
+#		fig = matplotlib.pyplot.figure(figsize=(6, 6))
+#		ax = fig.add_axes((0.15, 0.3, 0.72, 0.65), xlim = opts.get('xrange'), ylim = opts.get('yrange')) # l,b,w,h
+#	else:
+	fig = matplotlib.pyplot.figure(figsize=(6, 5))
+	ax = fig.add_axes((0.15, 0.1, 0.72, 0.85), xlim = opts.get('xrange'), ylim = opts.get('yrange')) # l,b,w,h
+#	opts['yscale'] = opts.get('y1scale', 'linear')
+#	opts['ylabel'] = opts.get('y1label', 'y1')
+	setupAxis(ax, opts)
+	ax.xaxis.set_major_formatter(matplotlib.ticker.NullFormatter())
+	ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+	drawInfoText(opts, ax)
+
+	(x, y, z, norm) = get2DXYZ(opts, src)
+	mesh = ax.pcolormesh(x, y, z, alpha = 1, norm = norm,
+		cmap = matplotlib.pyplot.get_cmap(opts.get('zcolor', 'bwr')))
+	cb = fig.colorbar(mesh, ax=ax, aspect=10, fraction = 0.05, pad = 0.02, format='$%.1f$')
+	cb.set_label(opts.get('zlabel', 'z'))
+	savePlot(fig, fn)
+#	if showErrors:
+#		ax2 = fig.add_axes((0.15, 0.1, 0.72*(1-0.05-0.02), 0.2), xlim = opts.get('xrange'), ylim = opts.get('y2range'))
+#		opts['yscale'] = opts.get('y2scale', 'linear')
+#		setupAxis(ax2, opts)
+#		ax2.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('$%.1f$'))
+#		ax2.set_ylabel(opts.get('y2label', 'y'), va = 'center', y = 0.5)
+#		tmp = dict(src)
+#		tmp['ye'] = ye_err
+#		plots = [P(data = scaleData(makeRelative(tmp, yoffset=0), 100), label = 'Error', style = 'band', alpha = 0.5, color = 'k')]
+#		drawPlots(ax2, map(dict, plots), xy_switch = opts.get('xy_switch', False))
+#		drawLines(ax2, [0])
+
+
+def doCMS2DPlot(fn, opts, src):
+	setCMSsettings(opts)
+	do2DPlot(fn, opts, src)
