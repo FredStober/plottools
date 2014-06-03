@@ -1,3 +1,5 @@
+import matplotlib
+
 def drawAnnotation(ax, notelist, opts = {}):
 	for note in notelist:
 		if isinstance(note, str):

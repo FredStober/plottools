@@ -32,7 +32,8 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 	else:
 		drawAnnotation(base_ax, opts.get('notes', []))
 	if 'area' in opts:
-		drawArea(base_ax, xlim = opts['area'].get('xlim'), ylim = opts['area'].get('ylim'))
+		for entry in opts['area']:
+			drawArea(base_ax, xlim = entry.get('xlim'), ylim = entry.get('ylim'))
 
 	lines = kwargs.get('lines', ([], []))
 	drawLines(base_ax, lines[0], lines[1], **opts_raw.get('lines', {}))
@@ -98,9 +99,12 @@ def do2DPlot(fn, opts, src):
 	ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
 	drawInfoText(opts, ax)
 
+	cmap = matplotlib.pyplot.get_cmap(opts.get('zcolor', 'bwr'))
+	if opts.get('zcolor_user'):
+		cmap = opts.get('zcolor_user')
 	(x, y, z, norm) = get2DXYZ(opts, src)
-	mesh = ax.pcolormesh(x, y, z, alpha = 1, norm = norm,
-		cmap = matplotlib.pyplot.get_cmap(opts.get('zcolor', 'bwr')))
+	
+	mesh = ax.pcolormesh(x, y, z, alpha = 1, norm = norm, cmap = cmap)
 	cb = fig.colorbar(mesh, ax=ax, aspect=10, fraction = 0.05, pad = 0.02, format='$%.1f$')
 	cb.set_label(opts.get('zlabel', 'z'))
 	savePlot(fig, fn)

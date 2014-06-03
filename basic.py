@@ -170,11 +170,13 @@ def drawPlots(ax, plots, opts = {}, xy_switch = False):
 		elif plotstyle == 'lines':
 			plot_raw['vis'] = ax.plot(plot_data['x'], plot_data['y'], plot.get('fmt', 'o-'),
 				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-				linewidth=plot.get('linewidth', 1),
+				linewidth = plot.get('linewidth', 1),
 				markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
 				markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
 				drawstyle = plot.get('drawstyle'),
 			)
+			if plot.get('dashes'):
+				plot_raw['vis'][0].set_dashes(plot.get('dashes'))
 
 		elif (plotstyle == 'band') or (plotstyle == 'bandx') or (plotstyle == 'outline') or (plotstyle == 'bandline'):
 			if plot.get('steps', False):
