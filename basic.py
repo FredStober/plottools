@@ -130,7 +130,9 @@ def drawPlots(ax, plots, opts = {}, xy_switch = False):
 				plot['fmt'] = plot['fmt'][1:]
 
 		# Retrieve data
-		plot_data = {'x': plot['data']['x'], 'xe': plot['data']['xe']}
+		plot_data = {}
+		plot_data['x'] = plot['data'][plot.get('xsrc', 'x')]
+		plot_data['xe'] = plot['data'][plot.get('xesrc', 'xe')]
 		plot_data['y'] = plot['data'][plot.get('ysrc', 'y')]
 		plot_data['ye'] = plot['data'][plot.get('esrc', 'ye')]
 		if xy_switch:
