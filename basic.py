@@ -132,9 +132,19 @@ def drawPlots(ax, plots, opts = {}, xy_switch = False):
 		# Retrieve data
 		plot_data = {}
 		plot_data['x'] = plot['data'][plot.get('xsrc', 'x')]
-		plot_data['xe'] = plot['data'][plot.get('xesrc', 'xe')]
 		plot_data['y'] = plot['data'][plot.get('ysrc', 'y')]
-		plot_data['ye'] = plot['data'][plot.get('esrc', 'ye')]
+
+		plot_zero = numpy.zeros(plot_data['x'].shape)
+		if plot.get('xesrc', 'xe') in plot['data']:
+			plot_data['xe'] = plot['data'][plot.get('xesrc', 'xe')]
+		else:
+			plot_data['xe'] = plot_zero
+
+		if plot.get('esrc', 'ye') in plot['data']:
+			plot_data['ye'] = plot['data'][plot.get('esrc', 'ye')]
+		else:
+			plot_data['ye'] = plot_zero
+
 		if xy_switch:
 			plot_data = {'x': plot_data['y'], 'xe': plot_data['ye'], 'y': plot_data['x'], 'ye': plot_data['xe']}
 
