@@ -35,8 +35,7 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 		for entry in opts['area']:
 			drawArea(base_ax, xlim = entry.get('xlim'), ylim = entry.get('ylim'))
 
-	lines = kwargs.get('lines', ([], []))
-	drawLines(base_ax, lines[0], lines[1], **opts_raw.get('lines', {}))
+	drawLines(base_ax, kwargs.get('lines', []), **opts_raw.get('lines', {}))
 	if kwargs.get('fun'):
 		kwargs.get('fun')(base_ax)
 	savePlot(fig, fn)

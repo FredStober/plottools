@@ -35,11 +35,25 @@ def drawArea(ax, xlim = None, ylim = None, color = 'gray', alpha = 0.2):
 		color=color, linewidth=0, alpha=alpha))
 
 
-def drawLines(ax, hlines = [], vlines = [], **kwargs):
-	for hline in hlines:
-		ax.hlines(hline, ax.get_xlim()[0], ax.get_xlim()[1], **kwargs)
-	for vline in vlines:
-		ax.vlines(vline, ax.get_ylim()[0], ax.get_ylim()[1], **kwargs)
+def drawLines(ax, lines = [], **kwargs):
+	def drawLine(drawfun, maxrange, vkey, rkey, draw_dict):
+		value = draw_dict.pop(vkey)
+		drawrange = draw_dict.pop(rkey, maxrange)
+		drawfun(value, drawrange[0], drawrange[1], **draw_dict)
+
+	if isinstance(lines, tuple): # ([hlines], [vlines])
+		(hlines, vlines) = lines
+		lines = []
+		for hline in hlines:
+			lines.append({'y': hline})
+		for vline in vlines:
+			lines.append({'x': vline})
+
+	for line_dict in lines:
+		if 'x' in line_dict:
+			drawLine(ax.vlines, (ax.get_ylim()[0], ax.get_ylim()[1]), 'x', 'yrange', line_dict)
+		else:
+			drawLine(ax.hlines, (ax.get_xlim()[0], ax.get_xlim()[1]), 'y', 'xrange', line_dict)
 
 
 def drawInfoText(opts, ax):
