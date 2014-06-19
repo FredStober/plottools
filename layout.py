@@ -33,7 +33,7 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 		drawAnnotation(base_ax, opts.get('notes', []))
 	if 'area' in opts:
 		for entry in opts['area']:
-			drawArea(base_ax, xlim = entry.get('xlim'), ylim = entry.get('ylim'))
+			drawArea(base_ax, **entry)
 
 	drawLines(base_ax, kwargs.get('lines', []), **opts_raw.get('lines', {}))
 	if kwargs.get('fun'):

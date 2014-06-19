@@ -19,7 +19,9 @@ def drawAnnotation(ax, notelist, opts = {}):
 			ha=note.get('ha', 'left'), va=note.get('va', 'center'), transform = tf, **opts)
 
 
-def drawArea(ax, xlim = None, ylim = None, color = 'gray', alpha = 0.2):
+def drawArea(ax, xlim = None, ylim = None, **kwargs):
+	opts = {'color': 'gray', 'alpha': 0.2, 'linewidth': 0}
+	opts.update(kwargs)
 	def getLimits(usr, axis):
 		if not usr:
 			return axis
@@ -31,8 +33,7 @@ def drawArea(ax, xlim = None, ylim = None, color = 'gray', alpha = 0.2):
 		return (low, high)
 	xr = getLimits(xlim, ax.get_xlim())
 	yr = getLimits(ylim, ax.get_ylim())
-	ax.add_patch(matplotlib.patches.Rectangle((xr[0], yr[0]), xr[1] - xr[0], yr[1] - yr[0],
-		color=color, linewidth=0, alpha=alpha))
+	ax.add_patch(matplotlib.patches.Rectangle((xr[0], yr[0]), xr[1] - xr[0], yr[1] - yr[0], **opts))
 
 
 def drawLines(ax, lines = [], **kwargs):
