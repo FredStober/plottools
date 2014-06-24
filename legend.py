@@ -19,28 +19,34 @@ def drawLegend(ax, plots, opts):
 
 
 def getPlotLabel(plot):
-	if ('label' in plot) and ('meta' in plot['data']):
+	if ('label' in plot) and plot.get('data') and ('meta' in plot.get('data', {})):
 		return plot['label'] % plot['data']['meta']
 	return plot.get('label')
 
 
 def drawLegend_int(ax, plots, size = 12, loc = 0, cols = 1, bbox_to_anchor = None, **other):
-	plots = filter(lambda p: p.get('label'), plots)
-	proxy = map(lambda p: getLabelProxy(p['vis'], p), plots)
+	other.setdefault('handlelength', 2.5)
+	other.setdefault('numpoints', 1)
+	plots = filter(lambda p: p.get('label') != None, plots)
+	proxy = map(lambda p: getLabelProxy(p.get('vis'), p, other), plots)
 	labels = map(getPlotLabel, plots)
 	locMap = {1: 3, 2: 8, 3: 4, 4: 6, 5: 10, 6: 7, 7: 2, 8: 9, 9: 1, 0: 0}
 	loc = int(loc)
 	loc = locMap[loc]
+	if bbox_to_anchor:
+		other.setdefault('bbox_to_anchor', bbox_to_anchor)
+	print other
 	if len(filter(lambda l: l != None, labels)) > 0:
-		if bbox_to_anchor:
-			return ax.legend(proxy, labels, prop=matplotlib.font_manager.FontProperties(size=size),
-				handlelength=2.5, loc=loc, bbox_to_anchor=bbox_to_anchor, ncol=cols, numpoints=1)
-		else:
-			return ax.legend(proxy, labels, prop=matplotlib.font_manager.FontProperties(size=size),
-				handlelength=2.5, loc=loc, ncol=cols, numpoints=1)
+		return ax.legend(proxy, labels, prop=matplotlib.font_manager.FontProperties(size=size),
+			loc=loc, ncol=cols, **other)
 
 
-def getLabelProxy(p, pinfo):
+def getLabelProxy(p, pinfo, lopts):
+	if not p: # Dummy entry
+		return matplotlib.lines.Line2D([0,1], [1,1], color='w', linewidth=0, linestyle=' ',
+				marker='', markersize=0, markeredgewidth=0, markerfacecolor='w', markeredgecolor='w')
+	if pinfo.get('style') == 'errorbar':
+		return p
 	if type(p) is matplotlib.collections.PolyCollection:
 		try:
 			return matplotlib.patches.Rectangle((0, 0), 1, 1,
@@ -54,11 +60,15 @@ def getLabelProxy(p, pinfo):
 			linestyle = p[0].get_linestyle()
 			if str(linestyle) == 'None':
 				linestyle = '-'
-			return matplotlib.lines.Line2D([0,1], [1,1], color=p[0].get_color(),
+			tmp = matplotlib.lines.Line2D([0,1], [1,1], color=p[0].get_color(),
 				linewidth=p[0].get_linewidth(), linestyle=linestyle,
 				marker=marker, markersize=p[0].get_markersize() + 3,
 				markeredgewidth=0.5, markerfacecolor=p[0].get_markerfacecolor(),
 				markeredgecolor='k')
+			if p[0]._dashSeq:
+				scaled_dashes = map(lambda d: d * 10 * lopts.get('handlelength') / lopts.get('numpoints') / float(sum(p[0]._dashSeq)), p[0]._dashSeq)
+				tmp.set_dashes(scaled_dashes)
+			return tmp
 		except:
 			return matplotlib.patches.Rectangle((0, 0), 1, 1,
 				fc = p[0].get_facecolor(), ec = p[0].get_facecolor())

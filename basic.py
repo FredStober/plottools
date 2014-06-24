@@ -117,128 +117,127 @@ def savePlot(fig, fn, output = ['png', 'pdf'], **kwargs):
 	matplotlib.pyplot.close()
 
 
-def drawPlots(ax, plots, opts = {}, xy_switch = False):
-	for plot_raw in plots:
-		plot = dict(opts)
-		plot.update(plot_raw)
-		if 'preset' in plot:
-			plot.update(plot_presets[plot['preset']])
-		plot['label'] = getPlotLabel(plot)
-		if 'fmt' in plot:
-			if plot['fmt'].startswith('#'):
-				plot['markerfacecolor'] = 'w'
-				plot['fmt'] = plot['fmt'][1:]
+def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
+	plot = dict(opts)
+	plot.update(plot_raw)
+	if 'preset' in plot:
+		plot.update(plot_presets[plot['preset']])
+	plot['label'] = getPlotLabel(plot)
+	if 'fmt' in plot:
+		if plot['fmt'].startswith('#'):
+			plot['markerfacecolor'] = 'w'
+			plot['fmt'] = plot['fmt'][1:]
 
-		# Retrieve data
-		plot_data = {}
-		plot_data['x'] = plot['data'][plot.get('xsrc', 'x')]
-		plot_data['y'] = plot['data'][plot.get('ysrc', 'y')]
+	# Retrieve data
+	plot_data = {}
+	plot_data['x'] = plot['data'][plot.get('xsrc', 'x')]
+	plot_data['y'] = plot['data'][plot.get('ysrc', 'y')]
 
-		plot_zero = numpy.zeros(plot_data['x'].shape)
-		if plot.get('xesrc', 'xe') in plot['data']:
-			plot_data['xe'] = plot['data'][plot.get('xesrc', 'xe')]
+	plot_zero = numpy.zeros(plot_data['x'].shape)
+	if plot.get('xesrc', 'xe') in plot['data']:
+		plot_data['xe'] = plot['data'][plot.get('xesrc', 'xe')]
+	else:
+		plot_data['xe'] = plot_zero
+
+	if plot.get('esrc', 'ye') in plot['data']:
+		plot_data['ye'] = plot['data'][plot.get('esrc', 'ye')]
+	else:
+		plot_data['ye'] = plot_zero
+
+	if xy_switch:
+		plot_data = {'x': plot_data['y'], 'xe': plot_data['ye'], 'y': plot_data['x'], 'ye': plot_data['xe']}
+
+	# Expand asymmetric error bars
+	if plot_data['ye'].ndim == 2:
+		(ye_high, ye_low) = (plot_data['ye'][0], plot_data['ye'][1])
+	else:
+		(ye_high, ye_low) = (plot_data['ye'], plot_data['ye'])
+	if ax.get_yscale() == 'log': # handle zero/subzero lower limits
+		ye_low = numpy.where(ye_low > plot_data['y'], plot_data['y'] - ax.get_ylim()[0], ye_low)
+	plot_data['ye'] = numpy.array([ye_low, ye_high])
+
+	plotstyle = plot.get('style', 'errorbar')
+	if plotstyle == 'steps':
+		plot.setdefault('fmt', '')
+		plot.setdefault('drawstyle', 'steps-mid')
+		plotstyle = 'lines'
+
+	if plotstyle == 'errorbar':
+		plot_raw['vis'] = ax.errorbar(plot_data['x'], plot_data['y'], plot_data['ye'], xerr = plot_data['xe'],
+			color = plot.get('color', 'k'), alpha = plot.get('alpha'), label = plot.get('label'),
+			linewidth = plot.get('linewidth', 1),
+			markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
+			markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
+			fmt = plot.get('fmt', 'o'), capsize = plot.get('capsize', 0),
+		)
+
+	elif plotstyle == 'bars':
+		islog = (opts.get('yscale', 'linear') == 'log')
+		plot_raw['vis'] = ax.bar(plot_data['x'] - plot_data['xe'], plot_data['y'], 2 * plot_data['xe'],
+			color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
+			log = True, linewidth = plot.get('linewidth', 0),
+		)
+
+	elif plotstyle == 'lines':
+		plot_raw['vis'] = ax.plot(plot_data['x'], plot_data['y'], plot.get('fmt', 'o-'),
+			color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
+			linewidth = plot.get('linewidth', 1),
+			markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
+			markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
+			drawstyle = plot.get('drawstyle'),
+		)
+		if plot.get('dashes'):
+			plot_raw['vis'][0].set_dashes(plot.get('dashes'))
+
+	elif (plotstyle == 'band') or (plotstyle == 'bandx') or (plotstyle == 'outline') or (plotstyle == 'bandline'):
+		if plot.get('steps', False):
+			y_low = plot_data['y'] - plot_data['ye'][0]
+			y_high = plot_data['y'] + plot_data['ye'][1]
+			y_low = numpy.ma.masked_invalid(y_low)
+			y_high = numpy.ma.masked_invalid(y_high)
+			xlims = (plot_data['x'] - plot_data['xe'], plot_data['x'] + plot_data['xe'])
+			plot_data['x'] = numpy.dstack(xlims).flatten()
+			y_low = numpy.repeat(y_low, 2)
+			y_high = numpy.repeat(y_high, 2)
 		else:
-			plot_data['xe'] = plot_zero
+			y_low = plot_data['y'] - plot_data['ye'][0]
+			y_high = plot_data['y'] + plot_data['ye'][1]
 
-		if plot.get('esrc', 'ye') in plot['data']:
-			plot_data['ye'] = plot['data'][plot.get('esrc', 'ye')]
-		else:
-			plot_data['ye'] = plot_zero
-
-		if xy_switch:
-			plot_data = {'x': plot_data['y'], 'xe': plot_data['ye'], 'y': plot_data['x'], 'ye': plot_data['xe']}
-
-		# Expand asymmetric error bars
-		if plot_data['ye'].ndim == 2:
-			(ye_high, ye_low) = (plot_data['ye'][0], plot_data['ye'][1])
-		else:
-			(ye_high, ye_low) = (plot_data['ye'], plot_data['ye'])
-		if ax.get_yscale() == 'log': # handle zero/subzero lower limits
-			ye_low = numpy.where(ye_low > plot_data['y'], plot_data['y'] - ax.get_ylim()[0], ye_low)
-		plot_data['ye'] = numpy.array([ye_low, ye_high])
-
-		plotstyle = plot.get('style', 'errorbar')
-		if plotstyle == 'steps':
-			plot.setdefault('fmt', '')
-			plot.setdefault('drawstyle', 'steps-mid')
-			plotstyle = 'lines'
-
-		if plotstyle == 'errorbar':
-			plot_raw['vis'] = ax.errorbar(plot_data['x'], plot_data['y'], plot_data['ye'], xerr = plot_data['xe'],
-				color = plot.get('color', 'k'), alpha = plot.get('alpha'), label = plot.get('label'),
-				linewidth = plot.get('linewidth', 1),
-				markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
-				markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
-				fmt = plot.get('fmt', 'o'), capsize = plot.get('capsize', 0),
-			)
-
-		elif plotstyle == 'bars':
-			islog = (opts.get('yscale', 'linear') == 'log')
-			plot_raw['vis'] = ax.bar(plot_data['x'] - plot_data['xe'], plot_data['y'], 2 * plot_data['xe'],
+		if plotstyle == 'band':
+			plot_raw['vis'] = ax.fill_between(plot_data['x'], y_low, y_high,
 				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-				log = True, linewidth = plot.get('linewidth', 0),
+				linewidth = plot.get('linewidth', 0)
 			)
-
-		elif plotstyle == 'lines':
-			plot_raw['vis'] = ax.plot(plot_data['x'], plot_data['y'], plot.get('fmt', 'o-'),
-				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-				linewidth = plot.get('linewidth', 1),
-				markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
-				markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
-				drawstyle = plot.get('drawstyle'),
-			)
-			if plot.get('dashes'):
-				plot_raw['vis'][0].set_dashes(plot.get('dashes'))
-
-		elif (plotstyle == 'band') or (plotstyle == 'bandx') or (plotstyle == 'outline') or (plotstyle == 'bandline'):
-			if plot.get('steps', False):
-				y_low = plot_data['y'] - plot_data['ye'][0]
-				y_high = plot_data['y'] + plot_data['ye'][1]
-				y_low = numpy.ma.masked_invalid(y_low)
-				y_high = numpy.ma.masked_invalid(y_high)
-				xlims = (plot_data['x'] - plot_data['xe'], plot_data['x'] + plot_data['xe'])
-				plot_data['x'] = numpy.dstack(xlims).flatten()
-				y_low = numpy.repeat(y_low, 2)
-				y_high = numpy.repeat(y_high, 2)
+		if plotstyle == 'bandx':
+			if plot_data['xe'].ndim == 2:
+				x_low = plot_data['x'] - plot_data['xe'][0]
+				x_high = plot_data['x'] + plot_data['xe'][1]
 			else:
-				y_low = plot_data['y'] - plot_data['ye'][0]
-				y_high = plot_data['y'] + plot_data['ye'][1]
-
-			if plotstyle == 'band':
-				plot_raw['vis'] = ax.fill_between(plot_data['x'], y_low, y_high,
-					color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-					linewidth = plot.get('linewidth', 0)
-				)
-			if plotstyle == 'bandx':
-				if plot_data['xe'].ndim == 2:
-					x_low = plot_data['x'] - plot_data['xe'][0]
-					x_high = plot_data['x'] + plot_data['xe'][1]
-				else:
-					x_low = plot_data['x'] - plot_data['xe']
-					x_high = plot_data['x'] + plot_data['xe']
-				x_low = numpy.ma.masked_invalid(x_low)
-				x_high = numpy.ma.masked_invalid(x_high)
-				plot_raw['vis'] = ax.fill_betweenx(numpy.repeat(plot_data['y'], 2), x_low, x_high,
-					color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-					linewidth=plot.get('linewidth', 0)
-				)
-			elif plotstyle == 'bandline':
-				plot_raw['vis'] = ax.fill_between(plot_data['x'], y_low, y_high,
-					color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-					linewidth=plot.get('linewidth', 0)
-				)
-			elif plotstyle == 'outline':
-				ax.plot(plot_data['x'], y_low, plot.get('fmt', ''),
-					color = plot.get('color'), alpha = plot.get('alpha'),
-					markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
-					markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
-					linewidth=plot.get('linewidth', 1), drawstyle = plot.get('drawstyle')
-				)
-				plot_raw['vis'] = ax.plot(plot_data['x'], y_high, plot.get('fmt', ''),
-					color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-					markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
-					markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
-					linewidth=plot.get('linewidth', 1), drawstyle = plot.get('drawstyle')
-				)
-		else:
-			raise
+				x_low = plot_data['x'] - plot_data['xe']
+				x_high = plot_data['x'] + plot_data['xe']
+			x_low = numpy.ma.masked_invalid(x_low)
+			x_high = numpy.ma.masked_invalid(x_high)
+			plot_raw['vis'] = ax.fill_betweenx(numpy.repeat(plot_data['y'], 2), x_low, x_high,
+				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
+				linewidth=plot.get('linewidth', 0)
+			)
+		elif plotstyle == 'bandline':
+			plot_raw['vis'] = ax.fill_between(plot_data['x'], y_low, y_high,
+				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
+				linewidth=plot.get('linewidth', 0)
+			)
+		elif plotstyle == 'outline':
+			ax.plot(plot_data['x'], y_low, plot.get('fmt', ''),
+				color = plot.get('color'), alpha = plot.get('alpha'),
+				markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
+				markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
+				linewidth=plot.get('linewidth', 1), drawstyle = plot.get('drawstyle')
+			)
+			plot_raw['vis'] = ax.plot(plot_data['x'], y_high, plot.get('fmt', ''),
+				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
+				markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
+				markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
+				linewidth=plot.get('linewidth', 1), drawstyle = plot.get('drawstyle')
+			)
+	else:
+		raise

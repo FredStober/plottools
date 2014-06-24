@@ -10,21 +10,25 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 	base_ax = ax
 
 	plots = map(dict, plots) # convert PlotEntries to dictionaries
-	plots_ax1 = filter(lambda p: p.get('data') and (p.get('axis', 1) == 1), plots)
-	drawPlots(ax, plots_ax1, opts.get('plots', {}), opts.get('xy_switch', False))
-
-	plots_ax2 = filter(lambda p: p.get('data') and (p.get('axis', 1) == 2), plots)
-	if plots_ax2:
-		xprefix = 'x'
-		yprefix = 'y'
-		if 'x2range' in opts:
-			xprefix = 'x2'
-			base_ax = base_ax.twiny()
-		if 'y2range' in opts:
-			yprefix = 'y2'
-			base_ax = base_ax.twinx()
-		setupAxis(base_ax, opts, xprefix = xprefix, yprefix = yprefix)
-		drawPlots(base_ax, plots_ax2, opts.get('plots2', opts.get('plots', {})), opts.get('xy_switch', False))
+	base_ax2 = None
+	for p in plots:
+		if not p.get('data'):
+			continue
+		axis = p.pop('axis', 1)
+		if axis == 1:
+			drawPlot(ax, p, opts.get('plots', {}), opts.get('xy_switch', False))
+		elif axis == 2:
+			if not base_ax2:
+				xprefix = 'x'
+				yprefix = 'y'
+				if 'x2range' in opts:
+					xprefix = 'x2'
+					base_ax2 = base_ax.twiny()
+				if 'y2range' in opts:
+					yprefix = 'y2'
+					base_ax2 = base_ax.twinx()
+				setupAxis(base_ax2, opts, xprefix = xprefix, yprefix = yprefix)
+			drawPlot(base_ax, p, opts.get('plots2', opts.get('plots', {})), opts.get('xy_switch', False))
 
 	drawLegend(base_ax, plots, opts)
 	if 'notesize' in opts:
@@ -116,7 +120,7 @@ def do2DPlot(fn, opts, src):
 #		tmp = dict(src)
 #		tmp['ye'] = ye_err
 #		plots = [P(data = scaleData(makeRelative(tmp, yoffset=0), 100), label = 'Error', style = 'band', alpha = 0.5, color = 'k')]
-#		drawPlots(ax2, map(dict, plots), xy_switch = opts.get('xy_switch', False))
+#		drawPlot(ax2, map(dict, plots), xy_switch = opts.get('xy_switch', False))
 #		drawLines(ax2, [0])
 
 
