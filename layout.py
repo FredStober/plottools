@@ -106,7 +106,7 @@ def do2DPlot(fn, opts, src):
 	if opts.get('zcolor_user'):
 		cmap = opts.get('zcolor_user')
 	(x, y, z, norm) = get2DXYZ(opts, src)
-	
+
 	mesh = ax.pcolormesh(x, y, z, alpha = 1, norm = norm, cmap = cmap)
 	cb = fig.colorbar(mesh, ax=ax, aspect=10, fraction = 0.05, pad = 0.02, format='$%.1f$')
 	cb.set_label(opts.get('zlabel', 'z'))

@@ -24,7 +24,7 @@ doPlot(os.path.basename(sys.argv[0]).split('.')[0], {
 		'xrange': ( -20, 20), 'xlabel': '$Q$ [GeV]',
 		'yrange': (-200, 50), 'ylabel': r'$\alpha_s(Q)$',
 		'legend': {'cols': 2, 'loc': 2},
-		'legend_test': {'cols': 1, 'loc': 8},
+		'legend_test': {'cols': 1, 'loc': 8, 'size': 8, 'marker_scale': 1.2},
 	}, [
 		P(data = getData(), style = 'errorbar', label = 'Errorbar1', legend = 'test'),
 		P(data = getData(), style = 'errorbar', color = '#ff3451', fmt = '#s', label = 'Errorbar2'),

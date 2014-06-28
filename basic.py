@@ -5,7 +5,7 @@ from mathtools import format_unc, format_exp
 from legend import getPlotLabel
 
 class PlotEntry:
-	def __init__(self, data, style = 'errorbar', **kwargs):
+	def __init__(self, data = None, style = 'errorbar', **kwargs):
 		self.info = kwargs
 		self.info['data'] = data
 		self.info['style'] = style
@@ -157,39 +157,39 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 	plot_data['ye'] = numpy.array([ye_low, ye_high])
 
 	plotstyle = plot.get('style', 'errorbar')
-	if plotstyle == 'steps':
+	if plotstyle.startswith('step') or (plotstyle.startswith('line') and plot.get('steps', False)):
 		plot.setdefault('fmt', '')
 		plot.setdefault('drawstyle', 'steps-mid')
 		plotstyle = 'lines'
 
-	if plotstyle == 'errorbar':
+	if plotstyle.startswith('errorbar'):
 		plot_raw['vis'] = ax.errorbar(plot_data['x'], plot_data['y'], plot_data['ye'], xerr = plot_data['xe'],
 			color = plot.get('color', 'k'), alpha = plot.get('alpha'), label = plot.get('label'),
 			linewidth = plot.get('linewidth', 1),
-			markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
+			markersize = plot.get('markersize', 3), markevery = plot.get('markevery'),
 			markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
 			fmt = plot.get('fmt', 'o'), capsize = plot.get('capsize', 0),
 		)
 
-	elif plotstyle == 'bars':
+	elif plotstyle.startswith('bar'):
 		islog = (opts.get('yscale', 'linear') == 'log')
 		plot_raw['vis'] = ax.bar(plot_data['x'] - plot_data['xe'], plot_data['y'], 2 * plot_data['xe'],
 			color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-			log = True, linewidth = plot.get('linewidth', 0),
+			log = islog, linewidth = plot.get('linewidth', 0),
 		)
 
-	elif plotstyle == 'lines':
+	elif plotstyle.startswith('line'):
 		plot_raw['vis'] = ax.plot(plot_data['x'], plot_data['y'], plot.get('fmt', 'o-'),
 			color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
 			linewidth = plot.get('linewidth', 1),
-			markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
+			markersize = plot.get('markersize', 3), markevery = plot.get('markevery'),
 			markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
 			drawstyle = plot.get('drawstyle'),
 		)
 		if plot.get('dashes'):
 			plot_raw['vis'][0].set_dashes(plot.get('dashes'))
 
-	elif (plotstyle == 'band') or (plotstyle == 'bandx') or (plotstyle == 'outline') or (plotstyle == 'bandline'):
+	else:
 		if plot.get('steps', False):
 			y_low = plot_data['y'] - plot_data['ye'][0]
 			y_high = plot_data['y'] + plot_data['ye'][1]
@@ -204,11 +204,18 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 			y_high = plot_data['y'] + plot_data['ye'][1]
 
 		if plotstyle == 'band':
+			fmt = plot.get('band_fmt', plot.get('fmt', '-'))
+			if fmt.strip() == '':
+				fmt = '-'
+				plot['band_linewidth'] = 0
 			plot_raw['vis'] = ax.fill_between(plot_data['x'], y_low, y_high,
 				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-				linewidth = plot.get('linewidth', 0)
+				hatch = plot.get('hatch'),
+				linewidth = plot.get('band_linewidth', plot.get('linewidth', 0)),
+				linestyle = fmt,
 			)
-		if plotstyle == 'bandx':
+
+		elif plotstyle == 'bandx':
 			if plot_data['xe'].ndim == 2:
 				x_low = plot_data['x'] - plot_data['xe'][0]
 				x_high = plot_data['x'] + plot_data['xe'][1]
@@ -221,23 +228,40 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
 				linewidth=plot.get('linewidth', 0)
 			)
+
 		elif plotstyle == 'bandline':
-			plot_raw['vis'] = ax.fill_between(plot_data['x'], y_low, y_high,
+			plot_raw['vis'] = []
+			plot_raw['vis'].append(ax.plot(plot_data['x'], plot_data['y'], plot.get('fmt', 'o-'),
 				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
-				linewidth=plot.get('linewidth', 0)
-			)
+				linewidth = plot.get('linewidth', 1),
+				markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
+				markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
+				drawstyle = plot.get('drawstyle'),
+			))
+			plot_raw['vis'].append(ax.fill_between(plot_data['x'], y_low, y_high,
+				color = plot.get('band_color', plot.get('color')),
+				alpha = plot.get('band_alpha', plot.get('alpha')),
+				hatch = plot.get('hatch'),
+				linewidth = plot.get('band_linewidth', 0),
+				linestyle = plot.get('band_fmt', plot.get('fmt', '-')),
+			))
+			if plot.get('dashes'):
+				plot_raw['vis'][0][0].set_dashes(plot.get('dashes'))
+
 		elif plotstyle == 'outline':
-			ax.plot(plot_data['x'], y_low, plot.get('fmt', ''),
+			plot_raw['vis'] = []
+			plot_raw['vis'].extend(ax.plot(plot_data['x'], y_low, plot.get('fmt', ''),
 				color = plot.get('color'), alpha = plot.get('alpha'),
 				markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
 				markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
-				linewidth=plot.get('linewidth', 1), drawstyle = plot.get('drawstyle')
-			)
-			plot_raw['vis'] = ax.plot(plot_data['x'], y_high, plot.get('fmt', ''),
+				linewidth = plot.get('linewidth', 1), drawstyle = plot.get('drawstyle')
+			))
+			plot_raw['vis'].extend(ax.plot(plot_data['x'], y_high, plot.get('fmt', ''),
 				color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
 				markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
 				markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
-				linewidth=plot.get('linewidth', 1), drawstyle = plot.get('drawstyle')
-			)
-	else:
-		raise
+				linewidth = plot.get('linewidth', 1), drawstyle = plot.get('drawstyle')
+			))
+
+		else:
+			raise
