@@ -1,5 +1,8 @@
 import matplotlib
 
+class MultiLineContainer(list):
+	pass
+
 def getPlotLabel(plot):
 	try:
 		return plot['label'] % plot['data']['meta']
@@ -28,6 +31,15 @@ def getHandlerMap(leg_opts):
 		except:
 			pass
 
+	class HandlerMultiLine(matplotlib.legend_handler.HandlerLine2D):
+		def create_artists(self, legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans):
+			result = []
+			for idx, handle in enumerate(orig_handle):
+				ydescent = height * (1 - 2 * idx / float(len(orig_handle) - 1))
+				result.extend(matplotlib.legend_handler.HandlerLine2D.create_artists(
+					self, legend, handle, xdescent, ydescent, width, height, fontsize, trans))
+			return result
+
 	return {
 		matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(
 			xerr_size = 1.25, yerr_size = 0.6, update_func = enlargeMarker),
@@ -36,6 +48,7 @@ def getHandlerMap(leg_opts):
 		matplotlib.container.BarContainer: matplotlib.legend_handler.HandlerPatch(
 			patch_func = createRectangle, update_func = matplotlib.legend_handler.update_from_first_child),
 		matplotlib.lines.Line2D: matplotlib.legend_handler.HandlerLine2D(update_func = enlargeMarker),
+		MultiLineContainer: HandlerMultiLine(),
 		list: lambda l, oh, fs, hb: map(lambda h: l.get_legend_handler(l.get_legend_handler_map(), h)(l, h, fs, hb), oh),
 		None: lambda l, oh, fs, hb: None,
 	}

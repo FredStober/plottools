@@ -2,7 +2,7 @@ import os, numpy
 import matplotlib
 import matplotlib.pyplot
 from mathtools import format_unc, format_exp
-from legend import getPlotLabel
+from legend import getPlotLabel, MultiLineContainer
 
 class PlotEntry:
 	def __init__(self, data = None, style = 'errorbar', **kwargs):
@@ -249,7 +249,7 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 				plot_raw['vis'][0][0].set_dashes(plot.get('dashes'))
 
 		elif plotstyle == 'outline':
-			plot_raw['vis'] = []
+			plot_raw['vis'] = MultiLineContainer()
 			plot_raw['vis'].extend(ax.plot(plot_data['x'], y_low, plot.get('fmt', ''),
 				color = plot.get('color'), alpha = plot.get('alpha'),
 				markersize = plot.get('markersize', 1), markevery = plot.get('markevery'),
