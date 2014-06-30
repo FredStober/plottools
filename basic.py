@@ -28,10 +28,10 @@ def getFigure(opts):
 	else:
 		fig = matplotlib.pyplot.figure(figsize=(numpy.sqrt(2)*w, w))
 	fig.subplots_adjust(
-		left=opts.get('left', 0.15),
-		right=1-opts.get('right', 0.05),
-		top=1-opts.get('top', 0.08),
-		bottom=opts.get('bottom', 0.15))
+		left = opts.get('left', opts.get('bl', 0.15)),
+		bottom = opts.get('bottom', opts.get('bl', 0.15)),
+		right = 1 - opts.get('right', opts.get('tr', 0.05)),
+		top = 1 - opts.get('top', opts.get('tr', 0.05)))
 	return fig
 
 
@@ -166,6 +166,7 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 		plot_raw['vis'] = ax.errorbar(plot_data['x'], plot_data['y'], plot_data['ye'], xerr = plot_data['xe'],
 			color = plot.get('color', 'k'), alpha = plot.get('alpha'), label = plot.get('label'),
 			linewidth = plot.get('linewidth', 1),
+			markeredgewidth = plot.get('markeredgewidth'),
 			markersize = plot.get('markersize', 3), markevery = plot.get('markevery'),
 			markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
 			fmt = plot.get('fmt', 'o'), capsize = plot.get('capsize', 0),

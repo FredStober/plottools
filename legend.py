@@ -15,8 +15,10 @@ def getHandlerMap(leg_opts):
 		legend_handle.set_hatch(orig_handle.get_hatch())
 		legend_handle.set_alpha(orig_handle.get_alpha())
 		legend_handle.set_linewidth(orig_handle.get_linewidth()[0])
-		legend_handle.set_facecolor(orig_handle.get_facecolor()[0])
-		legend_handle.set_edgecolor(orig_handle.get_edgecolor()[0])
+		if orig_handle.get_facecolor().size:
+			legend_handle.set_facecolor(orig_handle.get_facecolor()[0])
+		if orig_handle.get_edgecolor().size:
+			legend_handle.set_edgecolor(orig_handle.get_edgecolor()[0])
 
 	def createRectangle(legend, orig_handle, xdescent, ydescent, width, height, fontsize):
 		height = fontsize
@@ -40,9 +42,11 @@ def getHandlerMap(leg_opts):
 					self, legend, handle, xdescent, ydescent, width, height, fontsize, trans))
 			return result
 
+	errorbar_xs = leg_opts.pop('errorbar_xs', 1.25)
+	errorbar_ys = leg_opts.pop('errorbar_ys', 0.6)
 	return {
 		matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(
-			xerr_size = 1.25, yerr_size = 0.6, update_func = enlargeMarker),
+			xerr_size = errorbar_xs, yerr_size = errorbar_ys, update_func = enlargeMarker),
 		matplotlib.collections.PolyCollection: matplotlib.legend_handler.HandlerPatch(
 			patch_func = createRectangle, update_func = updateRectFromPatches),
 		matplotlib.container.BarContainer: matplotlib.legend_handler.HandlerPatch(
