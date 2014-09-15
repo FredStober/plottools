@@ -1,4 +1,4 @@
-import os, numpy
+import os, numpy, sys
 import matplotlib
 import matplotlib.pyplot
 from mathtools import format_unc, format_exp
@@ -108,11 +108,16 @@ def setupPlot(opts, **kwargs):
 
 def savePlot(fig, fn, output = ['png', 'pdf'], **kwargs):
 	dest = os.path.join(os.getcwd(), fn)
-	print 'saving plot', dest, output
+	sys.stdout.write('saving plot %s %s ' % (dest, output,))
+	sys.stdout.flush()
 	if not os.path.exists(os.path.dirname(dest)):
 		os.makedirs(os.path.dirname(dest))
 	for ext in output:
 		fig.savefig('%s.%s' % (dest, ext), **kwargs)
+		sys.stdout.write('%s ' % ext)
+		sys.stdout.flush()
+	sys.stdout.write('\n')
+	sys.stdout.flush()
 	fig.clear()
 	matplotlib.pyplot.close()
 
@@ -181,7 +186,7 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 
 	elif plotstyle.startswith('line'):
 		plot_raw['vis'] = ax.plot(plot_data['x'], plot_data['y'], plot.get('fmt', 'o-'),
-			color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
+			color = plot.get('color', 'k'), alpha = plot.get('alpha'), label = plot.get('label'),
 			linewidth = plot.get('linewidth', 1),
 			markersize = plot.get('markersize', 3), markevery = plot.get('markevery'),
 			markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
@@ -239,11 +244,14 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 				markerfacecolor = plot.get('markerfacecolor', plot.get('color')),
 				drawstyle = plot.get('drawstyle'),
 			))
+			blw = plot.get('band_linewidth', 0)
+			if blw == 0:
+				plot.setdefault('band_fmt', '-')
 			plot_raw['vis'].append(ax.fill_between(plot_data['x'], y_low, y_high,
 				color = plot.get('band_color', plot.get('color')),
 				alpha = plot.get('band_alpha', plot.get('alpha')),
 				hatch = plot.get('hatch'),
-				linewidth = plot.get('band_linewidth', 0),
+				linewidth = blw,
 				linestyle = plot.get('band_fmt', plot.get('fmt', '-')),
 			))
 			if plot.get('dashes'):

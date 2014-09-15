@@ -42,7 +42,7 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 	drawLines(base_ax, kwargs.get('lines', []), **opts_raw.get('lines', {}))
 	if kwargs.get('fun'):
 		kwargs.get('fun')(base_ax)
-	savePlot(fig, fn)
+	savePlot(fig, fn, opts_raw.get('formats', ['png', 'pdf']))
 
 
 def setCMSsettings(opts):
@@ -80,11 +80,13 @@ def get2DXYZ(opts, src):
 		if zr[1] != None:
 			z = numpy.ma.masked_greater(z, zr[1])
 
-	zscale = opts.get('zscale', 'norm')
+	zscale = opts.get('zscale', 'linear')
 	if zscale == 'norm':
 		norm = matplotlib.colors.Normalize(-1, 1)
 	elif zscale == 'log':
 		norm = matplotlib.colors.LogNorm(z.min(), z.max())
+	else:
+		norm = matplotlib.colors.Normalize(z.min(), z.max())
 	return (x, y, z, norm)
 
 
@@ -98,8 +100,8 @@ def do2DPlot(fn, opts, src):
 #	opts['yscale'] = opts.get('y1scale', 'linear')
 #	opts['ylabel'] = opts.get('y1label', 'y1')
 	setupAxis(ax, opts)
-	ax.xaxis.set_major_formatter(matplotlib.ticker.NullFormatter())
-	ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+#	ax.xaxis.set_major_formatter(matplotlib.ticker.NullFormatter())
+#	ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
 	drawInfoText(opts, ax)
 
 	cmap = matplotlib.pyplot.get_cmap(opts.get('zcolor', 'bwr'))
@@ -110,7 +112,7 @@ def do2DPlot(fn, opts, src):
 	mesh = ax.pcolormesh(x, y, z, alpha = 1, norm = norm, cmap = cmap)
 	cb = fig.colorbar(mesh, ax=ax, aspect=10, fraction = 0.05, pad = 0.02, format='$%.1f$')
 	cb.set_label(opts.get('zlabel', 'z'))
-	savePlot(fig, fn)
+	savePlot(fig, fn, opts.get('formats', ['png', 'pdf']), **opts.get('output_opts', {}))
 #	if showErrors:
 #		ax2 = fig.add_axes((0.15, 0.1, 0.72*(1-0.05-0.02), 0.2), xlim = opts.get('xrange'), ylim = opts.get('y2range'))
 #		opts['yscale'] = opts.get('y2scale', 'linear')
