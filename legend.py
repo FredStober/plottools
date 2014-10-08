@@ -25,14 +25,6 @@ def getHandlerMap(leg_opts):
 		ydescent += fontsize * 0.1
 		return matplotlib.patches.Rectangle(xy = (-xdescent, -ydescent), width = width, height = height)
 
-	marker_scale = leg_opts.pop('marker_scale', 2)
-	def enlargeMarker(legend_handle, orig_handle):
-		legend_handle.update_from(orig_handle)
-		try:
-			legend_handle.set_markersize(orig_handle.get_markersize() * marker_scale)
-		except:
-			pass
-
 	class HandlerMultiLine(matplotlib.legend_handler.HandlerLine2D):
 		def create_artists(self, legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans):
 			result = []
@@ -46,12 +38,12 @@ def getHandlerMap(leg_opts):
 	errorbar_ys = leg_opts.pop('errorbar_ys', 0.6)
 	return {
 		matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(
-			xerr_size = errorbar_xs, yerr_size = errorbar_ys, update_func = enlargeMarker),
+			xerr_size = errorbar_xs, yerr_size = errorbar_ys),
 		matplotlib.collections.PolyCollection: matplotlib.legend_handler.HandlerPatch(
 			patch_func = createRectangle, update_func = updateRectFromPatches),
 		matplotlib.container.BarContainer: matplotlib.legend_handler.HandlerPatch(
 			patch_func = createRectangle, update_func = matplotlib.legend_handler.update_from_first_child),
-		matplotlib.lines.Line2D: matplotlib.legend_handler.HandlerLine2D(update_func = enlargeMarker),
+		matplotlib.lines.Line2D: matplotlib.legend_handler.HandlerLine2D(),
 		MultiLineContainer: HandlerMultiLine(),
 		list: lambda l, oh, fs, hb: map(lambda h: l.get_legend_handler(l.get_legend_handler_map(), h)(l, h, fs, hb), oh),
 		None: lambda l, oh, fs, hb: None,
@@ -64,6 +56,7 @@ def drawLegend(ax, plots, opts):
 		leg_opts = dict(opts.get(('legend_%s' % leg).rstrip('_'), {}))
 		leg_opts.setdefault('handlelength', 2.5)
 		leg_opts.setdefault('numpoints', 1)
+		leg_opts.setdefault('markerscale', 2)
 		leg_opts.setdefault('ncol', leg_opts.pop('col', leg_opts.pop('ncols', leg_opts.pop('cols', 1))))
 		leg_opts.setdefault('prop', matplotlib.font_manager.FontProperties(size = leg_opts.pop('size', 12)))
 		locMap = {1: 3, 2: 8, 3: 4, 4: 6, 5: 10, 6: 7, 7: 2, 8: 9, 9: 1, 0: 0}
