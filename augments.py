@@ -60,7 +60,7 @@ def drawLines(ax, lines = [], **kwargs):
 def drawInfoText(opts, ax):
 	title_plot = opts.get('title', '')
 	if title_plot:
-		ax.text(0, 1.01, title_plot, transform=ax.transAxes, ha='left', va='bottom')
+		ax.text(0, 1.01, title_plot, transform=ax.transAxes, ha='left', va='bottom', fontsize=opts.get('titlesize', 14))
 	title_info = opts.get('infostr', '')
 	if title_info:
-		ax.text(1, 1.01, title_info, transform=ax.transAxes, ha='right', va='bottom')
+		ax.text(1, 1.01, title_info, transform=ax.transAxes, ha='right', va='bottom', fontsize=opts.get('infostrsize', 11))

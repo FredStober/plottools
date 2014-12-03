@@ -29,11 +29,12 @@ def getData():
 	return {'x': x, 'xe': xe, 'y': y, 'ye': ye}
 
 
-doCMSPlot(os.path.basename(sys.argv[0]).split('.')[0], {'width': 5, 'square': True, 'xpad': 5, 'ypad': 10,
+if False:
+	doCMSPlot(os.path.basename(sys.argv[0]).split('.')[0], {'width': 5, 'square': True, 'xpad': 5, 'ypad': 10,
 		'xrange': ( -20, 20), 'xlabel': '$Q$ [GeV]',
 		'yrange': (-4, 2), 'ylabel': r'$\alpha_s(Q)$',
 		'legend': {'cols': 2, 'loc': 2},
-		'legend_test': {'cols': 1, 'loc': 8, 'size': 8, 'marker_scale': 1.2},
+		'legend_test': {'cols': 1, 'loc': 8, 'size': 8, 'markerscale': 1.2},
 	}, [
 		P(data = getData(), style = 'errorbar', label = 'Errorbar1', legend = 'test'),
 		P(data = getData(), style = 'errorbar', color = '#ff3451', fmt = '#s',
@@ -60,5 +61,52 @@ doCMSPlot(os.path.basename(sys.argv[0]).split('.')[0], {'width': 5, 'square': Tr
 		P(data = getData(), style = 'bandline', color = 'm', fmt = '-.', dashes = [2,5,7,2], alpha = 0.5,
 			linewidth = 2, label = 'Bandline1', hatch = '////'),
 		P(label = 'Pad Entry 2'),
+	])
+
+data_1 = {
+	'x': numpy.array([1, 2, 4]), 'xe': numpy.array([[0.25, 0.5, 0.5], [0.5, 0.25, 0.5]]),
+	'y': numpy.array([-2, 4, 6]), 'ye': numpy.array([[1, 2, 2], [0.5, 1, 3]]),
+}
+print data_1
+
+doCMSPlot(os.path.basename(sys.argv[0]).split('.')[0] + '_1', {'width': 5, 'square': True, 'xpad': 5, 'ypad': 10,
+		'xrange': (-1, 5), 'xlabel': '$Q$ [GeV]',
+		'yrange': (-5, 10), 'ylabel': r'$\alpha_s(Q)$',
+		'legend': {'cols': 1, 'loc': 7}, 'grid': True, 'notesize': 8,
+		'notes': ['0,0.2,%r' % list(data_1['x']), '0,0.15,%r' % list(data_1['xe']), '0,0.1,%r' % data_1['y'], '0,0.05,%r' % list(data_1['ye'])],
+	}, [
+		P(data = data_1, style = 'errorband', label = 'Errorband1', color = 'r', alpha = 0.4, steps = True),
+		P(data = data_1, style = 'errorband', label = 'Errorband2', color = 'b', alpha = 0.4, steps = True, band_connected = False),
+	]
+)
+
+data_1 = {
+	'x': numpy.array([0, 2, 3, 4, 5]), 'xe': numpy.array([[1, 0.5, 0.5, 1, 0.25], [0.5, 1, 0.5, 0, 0.25]]),
+	'y': numpy.array([5, 0, -1, 3, 2]), 'ye': numpy.array([[1, 2, 1, 3, 1], [2, 2, 2, 2, 1]]),
+}
+print data_1
+
+doCMSPlot(os.path.basename(sys.argv[0]).split('.')[0] + '_2', {'width': 5, 'square': True, 'xpad': 5, 'ypad': 10,
+		'xrange': (-1, 6), 'xlabel': '$Q$ [GeV]',
+		'yrange': (-5, 10), 'ylabel': r'$\alpha_s(Q)$',
+		'legend': {'cols': 1, 'loc': 7}, 'grid': True, 'notesize': 8,
+		'notes': ['0,0.2,%r' % list(data_1['x']), '0,0.15,%r' % list(data_1['xe']), '0,0.1,%r' % data_1['y'], '0,0.05,%r' % list(data_1['ye'])],
+	}, [
+#		P(data = data_1, style = 'errorbar', label = 'Errorbar', color = 'r', linewidth = 4, fmt='-'),
+#		P(data = data_1, style = 'lines', label = 'Lines', color = 'b', linewidth = 2),
+		P(data = data_1, style = 'lines', label = 'None', color = 'y', steps = True, fmt = '-^', markersize=4, connected = None),
+		P(data = data_1, style = 'lines', label = 'True', color = 'r', steps = True, fmt = '--s', markersize=4, connected = True),
+		P(data = data_1, style = 'lines', label = 'False', color = 'b', steps = True, fmt = '-.o', markersize=4, connected = False),
+	]
+)
+
+doCMSPlot(os.path.basename(sys.argv[0]).split('.')[0] + '_3', {'width': 5, 'square': True, 'xpad': 5, 'ypad': 10,
+		'xrange': (-1, 6), 'xlabel': '$Q$ [GeV]',
+		'yrange': (-5, 10), 'ylabel': r'$\alpha_s(Q)$',
+		'legend': {'cols': 1, 'loc': 7}, 'grid': True, 'notesize': 8,
+		'notes': ['0,0.2,%r' % list(data_1['x']), '0,0.15,%r' % list(data_1['xe']), '0,0.1,%r' % data_1['y'], '0,0.05,%r' % list(data_1['ye'])],
+	}, [
+		P(data = data_1, steps = True, style = 'errorband', fmt = 'o', color = 'k',
+			band_color = '#555555', band_alpha = 0.5, band_fmt = '-'),
 	]
 )
