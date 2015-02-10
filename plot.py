@@ -67,56 +67,113 @@ def get2DXYZ(opts, src):
 
 
 def do2DPlot(fn, opts, src):
-#	if showErrors:
-#		fig = matplotlib.pyplot.figure(figsize=(6, 6))
-#		ax = fig.add_axes((0.15, 0.3, 0.72, 0.65), xlim = opts.get('xrange'), ylim = opts.get('yrange')) # l,b,w,h
-#	else:
 	(fig, ax) = setupPlot(opts)
-#	fig = getFigure(opts)
-#	ax = fig.add_axes((0.15, 0.1, 0.72, 0.85), xlim = opts.get('xrange'), ylim = opts.get('yrange')) # l,b,w,h
-#	opts['yscale'] = opts.get('y1scale', 'linear')
-#	opts['ylabel'] = opts.get('y1label', 'y1')
 	setupAxis(ax, opts)
-#	ax.xaxis.set_major_formatter(matplotlib.ticker.NullFormatter())
-#	ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
 	drawInfoText(opts, ax)
 
-	cmap = matplotlib.pyplot.get_cmap(opts.get('zcolor', 'bwr'))
-	if opts.get('zcolor_user'):
-		cmap = opts.get('zcolor_user')
+	zcolor = opts.get('zcolor', 'bwr')
+	if isinstance(zcolor, str):
+		cmap = matplotlib.pyplot.get_cmap(zcolor)
+	else:
+		cmap = zcolor
 	(x, y, z) = get2DXYZ(opts, src)
 
 	zscale = opts.get('zscale', 'linear')
+	level_style = None
 	if zscale == 'norm':
-		norm = matplotlib.colors.Normalize(-1, 1)
+		zrange = opts.get('zrange', (-1, 1))
+		norm = matplotlib.colors.Normalize(zrange[0], zrange[1])
+		level_style = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
+		level_pos = [-1. , -0.8, -0.6, -0.4, -0.2,  0. ,  0.2,  0.4,  0.6,  0.8,  1. ]
+		level_color = ['k', 'k', 'k', 'k', 'k', 'k', 'w', 'w', 'w', 'w', 'w']
 	elif zscale == 'log':
-		norm = matplotlib.colors.LogNorm(z.min(), z.max())
+		zrange = opts.get('zrange', (z.min(), z.max()))
+		norm = matplotlib.colors.LogNorm(zrange[0], zrange[1])
+		level_pos = opts.get('zlevel', None)
+		level_color = opts.get('zlevel_color', None)
 	else:
-		norm = matplotlib.colors.Normalize(z.min(), z.max())
+		zrange = opts.get('zrange', (z.min(), z.max()))
+		norm = matplotlib.colors.Normalize(zrange[0], zrange[1])
+		level_pos = opts.get('zlevel', None)
+		level_color = opts.get('zlevel_color', None)
 
-#	mesh = ax.pcolormesh(x, y, z, alpha = 1, norm = norm, cmap = cmap, edgecolors='face')
-	mesh = ax.pcolor(x, y, z, alpha = 1, norm = norm, cmap = cmap, edgecolors='face')
-	if False:
-		mesh = ax.contour(x, y, z, alpha = 1, norm = norm,
-			linestyles = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'],
-#			linestyles = ['--', '-', '--', '-', '--', '-', '--', '-', '--', '-', '--'],
-			levels = [-1. , -0.8, -0.6, -0.4, -0.2,  0. ,  0.2,  0.4,  0.6,  0.8,  1. ],
-			colors = ['k', 'k', 'k', 'k', 'k', 'k', 'w', 'w', 'w', 'w', 'w'])
-		ax.clabel(mesh, inline=True, fontsize=10, fmt = '%.1f',
-			colors = ['k', 'k', 'k', 'k', 'k', 'k', 'w', 'w', 'w', 'w', 'w'])
-	else:
-		cb = fig.colorbar(mesh, ax=ax, aspect=30, fraction = 0.15, pad = 0.01, format='$%.1f$')
-		cb.solids.set_edgecolor("face")
-#		setupAxis_single(cb, cb, opts, 'z')
+	mode = map(str.strip, opts.get('mode', 'pcolor,bar').split(','))
+	if 'pcolormesh' in mode:
+		mesh = ax.pcolormesh(x, y, z, alpha = 1, norm = norm, cmap = cmap, edgecolors='face')
+	elif 'pcolor' in mode:
+		mesh = ax.pcolor(x, y, z, alpha = 1, norm = norm, cmap = cmap, edgecolors='face')
+
+	if 'text' in mode:
+		for i, r in enumerate(z):
+			for j, v in enumerate(r):
+				try:
+					if v.mask:
+						continue
+				except:
+					pass
+				if opts.get('zscale', 'log'):
+					if x[j] == 0:
+						p_x = numpy.exp((numpy.log(ax.get_xlim()[0]) + numpy.log(x[j + 1])) / 2.)
+					else:
+						p_x = numpy.exp((numpy.log(x[j]) + numpy.log(x[j + 1])) / 2.)
+					if y[i] == 0:
+						p_y = numpy.exp((numpy.log(ax.get_ylim()[0]) + numpy.log(y[i + 1])) / 2.)
+					else:
+						p_y = numpy.exp((numpy.log(y[i]) + numpy.log(y[i + 1])) / 2.)
+				else:
+					p_x = (x[j] + x[j + 1]) / 2.
+					p_y = (y[i] + y[i + 1]) / 2.
+				if (p_x < ax.get_xlim()[0]) or (p_y < ax.get_ylim()[0]) or (p_x > ax.get_xlim()[1]) or (p_y > ax.get_ylim()[1]):
+					continue
+				ax.text(p_x, p_y, '%.1f' % v, ha = 'center', va = 'center', fontsize = 6)
+#				print i, j, v, p_x, p_y
+#		print x.shape, x
+#		print y.shape, y
+#		print z.shape, z
+
+	if 'contourf' in mode:
+		opts.setdefault('raw_data', True)
+		(x, y, z) = get2DXYZ(opts, src)
+		cmesh = ax.contourf(x, y, z, alpha = 1, norm = norm,
+			linestyles = level_style, levels = level_pos, colors = level_color)
+	elif 'contour' in mode:
+		opts.setdefault('raw_data', True)
+		(x, y, z) = get2DXYZ(opts, src)
+		cmesh = ax.contour(x, y, z, alpha = 1, norm = norm,
+			linestyles = level_style, levels = level_pos, colors = level_color)
+	if 'clabel' in mode:
+		zcprec = '$%.' + str(opts.get('zcprec', 1)) + 'f$'
+		ax.clabel(cmesh, inline=True, fontsize=10, fmt = zcprec, colors = level_color)
+
+	cb = None
+	zprec = '$%.' + str(opts.get('zprec', 1)) + 'f$'
+	if 'bar' in mode:
+		cb = fig.colorbar(mesh, ax=ax, aspect=30, fraction = 0.15, pad = 0.01, format=zprec)
+	if 'cbar' in mode:
+		cb = fig.colorbar(cmesh, ax=ax, aspect=30, fraction = 0.15, pad = 0.01, format=zprec)
+	if cb:
+		try:
+			cb.solids.set_edgecolor("face")
+		except:
+			pass
 		cb.set_label(opts.get('zlabel', 'z'), ha = 'right', va = 'top', y = 1, size = 11.5,
 			labelpad = opts.get('zpad', None))
+		cb.set_minor_locator = lambda *args: None
+		cb.set_major_locator = lambda x: setattr(cb, 'locator', x)
+		cb.set_major_formatter = lambda x: setattr(cb, 'formatter', x)
+		cb.get_ticklabels = lambda *args: []
+		setupAxis_single_style(cb, cb, opts, 'z', zscale)
+		cb.update_ticks()
+
 	if 'notesize' in opts and 'notecolor' in opts :
 		drawAnnotation(ax, opts.get('notes', []), {'fontsize': opts.get('notesize'), 'color': opts.get('notecolor')})
 	elif 'notesize' in opts:
 		drawAnnotation(ax, opts.get('notes', []), {'fontsize': opts.get('notesize')})
 	else:
 		drawAnnotation(ax, opts.get('notes', []))
+	drawLines(ax, opts.get('lines', {}))
 	savePlot(fig, fn, opts.get('formats', ['png', 'pdf']), **opts.get('output_opts', {}))
+
 #	if showErrors:
 #		ax2 = fig.add_axes((0.15, 0.1, 0.72*(1-0.05-0.02), 0.2), xlim = opts.get('xrange'), ylim = opts.get('y2range'))
 #		opts['yscale'] = opts.get('y2scale', 'linear')

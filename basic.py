@@ -45,27 +45,14 @@ def getFigure(opts):
 	return fig
 
 
-def setupAxis_single(ax, ax_int, opts, prefix):
-	if opts.get(prefix + 'labelsize', None):
-		ax_int.label.set_size(opts.get(prefix + 'labelsize'))
-	ax_int.label.set_color(opts.get(prefix + 'color', 'black'))
-
-	scale = opts.get(prefix + 'scale', 'linear')
-	axlim = opts.get(prefix + 'range')
-	if prefix.startswith('x'):
-		if axlim:
-			ax.set_xlim(*axlim)
-		if scale != 'linear':
-			ax.set_xscale(scale)
-	elif prefix.startswith('y'):
-		if axlim:
-			ax.set_ylim(*axlim)
-		if scale != 'linear':
-			ax.set_yscale(scale)
-
+def setupAxis_single_style(ax, ax_int, opts, prefix, scale):
 	style = opts.get(prefix + 'style', scale)
 
-	if style == 'manual':
+	if style == 'none':
+		ax_int.set_major_formatter(matplotlib.ticker.NullFormatter())
+		ax_int.set_minor_formatter(matplotlib.ticker.NullFormatter())
+
+	elif style == 'manual':
 		tmp = opts.get(prefix + 'ticks_manual')
 		ax_int.set_ticks(tmp['ticks'])
 		ax_int.set_ticklabels(tmp['labels'],
@@ -105,6 +92,14 @@ def setupAxis_single(ax, ax_int, opts, prefix):
 	elif format == 'f':
 		prec = str(opts.get(prefix + 'prec', 1))
 		ax_int.set_major_formatter(matplotlib.ticker.FormatStrFormatter(r'$%.' + prec + 'f$'))
+	elif format == 'p':
+		prec = str(opts.get(prefix + 'prec', 1))
+		def format_phy(value, pos):
+			tmp = (r'%.' + prec + 'f') % value
+			tmp = tmp.rstrip('0')
+			tmp = tmp.rstrip('.')
+			return '$%s$' % tmp
+		ax_int.set_major_formatter(matplotlib.ticker.FuncFormatter(format_phy))
 	elif format == 'deg':
 		prec = str(opts.get(prefix + 'prec', 1))
 		def format_deg(value, pos):
@@ -136,6 +131,27 @@ def setupAxis_single(ax, ax_int, opts, prefix):
 	# Apply color
 	for x in ax_int.get_ticklabels():
 		x.set_color(opts.get(prefix + 'color', 'black'))
+
+
+def setupAxis_single(ax, ax_int, opts, prefix):
+	if opts.get(prefix + 'labelsize', None):
+		ax_int.label.set_size(opts.get(prefix + 'labelsize'))
+	ax_int.label.set_color(opts.get(prefix + 'color', 'black'))
+
+	scale = opts.get(prefix + 'scale', 'linear')
+	axlim = opts.get(prefix + 'range')
+	if prefix.startswith('x'):
+		if axlim:
+			ax.set_xlim(*axlim)
+		if scale != 'linear':
+			ax.set_xscale(scale)
+	elif prefix.startswith('y'):
+		if axlim:
+			ax.set_ylim(*axlim)
+		if scale != 'linear':
+			ax.set_yscale(scale)
+
+	setupAxis_single_style(ax, ax_int, opts, prefix, scale)
 
 
 def setupAxis(ax, opts, xprefix = 'x', yprefix = 'y'):

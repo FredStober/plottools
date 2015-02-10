@@ -1,22 +1,30 @@
 import matplotlib
 
 def drawAnnotation(ax, notelist, opts = {}):
-	for note in notelist:
-		if isinstance(note, str):
+	for note_entry in notelist:
+
+		note = dict(opts)
+		if isinstance(note_entry, str):
 			xp, yp, text = note.split(',', 2)
-			note = {'x': xp, 'y': float(yp), 'label': text}
+			note.update({'x': xp, 'y': float(yp), 'label': text})
 			if xp.startswith('r'):
 				note.setdefault('ha', 'right')
 				note['x'] = float(xp[1:])
 			else:
 				note['x'] = float(xp)
 			note.setdefault('transform', 'axis')
+		else:
+			note.update(note_entry)
 
 		tf = ax.transAxes
-		if note.get('transform') == 'data':
+		if note.pop('transform', 'axis') == 'data':
 			tf = ax.transData
-		ax.text(note.get('x', 0), note.get('y', 0), note['label'],
-			ha=note.get('ha', 'left'), va=note.get('va', 'center'), transform = tf, **opts)
+		n_x = note.pop('x', 0)
+		n_y = note.pop('y', 0)
+		n_l = note.pop('label')
+		n_xa = note.pop('ha', 'left')
+		n_ya = note.pop('va', 'center')
+		ax.text(n_x, n_y, n_l, ha = n_xa, va = n_ya, transform = tf, **note)
 
 
 def drawArea(ax, xlim = None, ylim = None, **kwargs):
