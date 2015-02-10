@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import math, numpy, sys, os, random
-sys.path.append(os.path.normpath(os.path.join(os.path.dirname(os.path.join(os.getcwd(), __file__)), '..')))
+sys.path.append(os.path.normpath(os.path.join(os.path.dirname(os.path.join(os.getcwd(), __file__)), '../..')))
 random.seed(123)
 
 import matplotlib
+matplotlib.rc('text', usetex = True)
 matplotlib.use('agg')
 from plottools import P, doPlot, doCMSPlot
 

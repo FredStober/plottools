@@ -2,10 +2,9 @@ import matplotlib
 
 def drawAnnotation(ax, notelist, opts = {}):
 	for note_entry in notelist:
-
 		note = dict(opts)
 		if isinstance(note_entry, str):
-			xp, yp, text = note.split(',', 2)
+			xp, yp, text = note_entry.split(',', 2)
 			note.update({'x': xp, 'y': float(yp), 'label': text})
 			if xp.startswith('r'):
 				note.setdefault('ha', 'right')

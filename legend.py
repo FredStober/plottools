@@ -36,6 +36,16 @@ def getHandlerMap(leg_opts):
 
 	errorbar_xs = leg_opts.pop('errorbar_xs', 1.25)
 	errorbar_ys = leg_opts.pop('errorbar_ys', 0.6)
+	class DummyLegendHandler:
+		def __init__(self, fun):
+			self.fun = fun
+		def legend_artist(self, *args):
+			return self.fun(*args)
+	class CompositorHandler:
+		def legend_artist(self, legend, orig_handle, *args):
+			lmap = legend.get_legend_handler_map()
+			for handle in orig_handle:
+				legend.get_legend_handler(lmap, handle).legend_artist(legend, handle, *args)
 	return {
 		matplotlib.container.ErrorbarContainer: matplotlib.legend_handler.HandlerErrorbar(
 			xerr_size = errorbar_xs, yerr_size = errorbar_ys),
@@ -45,8 +55,8 @@ def getHandlerMap(leg_opts):
 			patch_func = createRectangle, update_func = matplotlib.legend_handler.update_from_first_child),
 		matplotlib.lines.Line2D: matplotlib.legend_handler.HandlerLine2D(),
 		MultiLineContainer: HandlerMultiLine(),
-		list: lambda l, oh, fs, hb: map(lambda h: l.get_legend_handler(l.get_legend_handler_map(), h)(l, h, fs, hb), oh),
-		None: lambda l, oh, fs, hb: None,
+		list: CompositorHandler(),
+		None: DummyLegendHandler(lambda *args: None),
 	}
 
 

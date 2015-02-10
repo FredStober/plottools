@@ -1,5 +1,9 @@
 import numpy, math
-import ROOT
+
+try:
+	import ROOT
+except:
+	pass
 
 class TH1DWrapper(object):
 	def __init__(self, th1d):

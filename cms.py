@@ -3,7 +3,7 @@ from plot import doPlot, do2DPlot
 def setCMSsettings(opts):
 	cms_style = opts.get('cms-style', 'default')
 
-	opts.setdefault('title', r'\texthbf{CMS} \textit{preliminary}')
+	opts.setdefault('title', r'\textbf{CMS} \textit{preliminary}')
 	infostr = []
 	lumi = opts.get('lumi')
 	if lumi:
