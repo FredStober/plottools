@@ -1,7 +1,7 @@
 import os, numpy, sys
 import matplotlib
 import matplotlib.pyplot
-from mathtools import format_unc, format_exp
+from format import format_exp
 from legend import getPlotLabel, MultiLineContainer
 from fractions import Fraction
 
