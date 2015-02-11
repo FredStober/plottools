@@ -1,4 +1,4 @@
-import os, numpy, sys
+import os, numpy, sys, time
 import matplotlib
 import matplotlib.pyplot
 from format import format_exp
@@ -89,6 +89,9 @@ def setupAxis_single_style(ax, ax_int, opts, prefix, scale):
 			return '$\pi$'
 	if format == 'e':
 		ax_int.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, y: format_exp(x)))
+	if format == 'date':
+		fmtstr = opts.get(prefix + 'datefmt', '%Y-%m-%d')
+		ax_int.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, y: time.strftime(fmtstr, time.localtime(x))))
 	elif format == 'f':
 		prec = str(opts.get(prefix + 'prec', 1))
 		ax_int.set_major_formatter(matplotlib.ticker.FormatStrFormatter(r'$%.' + prec + 'f$'))
@@ -131,6 +134,9 @@ def setupAxis_single_style(ax, ax_int, opts, prefix, scale):
 	# Apply color
 	for x in ax_int.get_ticklabels():
 		x.set_color(opts.get(prefix + 'color', 'black'))
+		if opts.get(prefix + 'rotation', 0) != 0:
+			x.set_ha('right')
+			x.set_rotation(opts.get(prefix + 'rotation', 0))
 
 
 def setupAxis_single(ax, ax_int, opts, prefix):
@@ -190,6 +196,12 @@ def setupPlot(opts, **kwargs):
 
 
 def savePlot(fig, fn, output = ['png', 'pdf'], **kwargs):
+	if fn.endswith('.png'):
+		output = ['png']
+		fn = fn[:-4]
+	if fn.endswith('.pdf'):
+		output = ['pdf']
+		fn = fn[:-4]
 	dest = os.path.join(os.getcwd(), fn)
 	sys.stdout.write('saving plot %s %s ' % (dest, output,))
 	sys.stdout.flush()
