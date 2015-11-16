@@ -196,12 +196,6 @@ def setupPlot(opts, **kwargs):
 
 
 def savePlot(fig, fn, output = ['png', 'pdf'], **kwargs):
-	if fn.endswith('.png'):
-		output = ['png']
-		fn = fn[:-4]
-	if fn.endswith('.pdf'):
-		output = ['pdf']
-		fn = fn[:-4]
 	dest = os.path.join(os.getcwd(), fn)
 	sys.stdout.write('saving plot %s %s ' % (dest, output,))
 	sys.stdout.flush()
@@ -217,3 +211,172 @@ def savePlot(fig, fn, output = ['png', 'pdf'], **kwargs):
 	sys.stdout.flush()
 	fig.clear()
 	matplotlib.pyplot.close()
+
+
+class UncertaintyHolder(object):
+	def __init__(self):
+		self._data = []
+		self._keys = set()
+
+	def set(self, x, **values):
+		for key in values:
+			self._keys.add(key)
+			try:
+				self._data.append((tuple(x), key, values[key]))
+			except:
+				self._data.append(((x,), key, values[key]))
+
+	def get_keys(self):
+		return sorted(self._keys)
+
+	def get(self):
+		def removeEpsilon(src):
+			result = {}
+			while src:
+				x = src.pop()
+				result[x] = x
+				for y in filter(lambda y: abs(x-y) / x < 1e-10, src):
+					src.remove(y)
+					result[y] = x
+			return result
+		xlist = []
+		for x in self._data:
+			xlist.extend(x[0])
+		xmap = removeEpsilon(sorted(xlist))
+		result = {}
+		for (x, key, value) in self._data:
+			x_new = tuple(map(lambda y: xmap[y], x))
+			result.setdefault(x_new, {}).setdefault(key, {}).update(value)
+		return result
+
+
+def saveHEPDATA(fn, opts, plots):
+	from augments import parseAnnotation
+	from draw import parsePlotData
+
+	hepdata_info = opts.get('hepdata', {})
+	fp = open(fn + '.hepdata', 'w')
+	style = hepdata_info.pop('style', None)
+	if not style:
+		return
+
+	def writeHeader(xheader = '', yheader = ''):
+		def writeEntry(key):
+			if hepdata_info.get(key):
+				fp.write('*%s: %s\n' % (key, str(hepdata_info[key]).strip()))
+		fp.write('*dataset:\n')
+		writeEntry('location')
+		writeEntry('dscomment')
+		writeEntry('reackey')
+		writeEntry('obskey')
+		for entry in hepdata_info.get('qual', []):
+			fp.write('*qual:%s\n' % entry.strip())
+		for note in opts.get('notes', []):
+			fp.write('*qual:%s\n' % note.split(',')[-1].strip())
+		fp.write('*xheader: %s\n' % xheader)
+		fp.write('*yheader: %s\n' % yheader)
+
+	def writeData(header, entries):
+		fp.write('*data: %s\n' % header)
+		for entry in entries:
+			fp.write(entry + '\n')
+		fp.write('*dataend:\n')
+
+	def writeUHData(xheader, yheader, uh, yerr_list_order = None):
+		x_fmt = '%.' + '%d%s' % (opts.get('xprec', 6), opts.get('xformat', 'g'))
+		y_fmt = '%.' + '%d%s' % (opts.get('yprec', 3), opts.get('yformat', 'f'))
+
+		output = []
+		for (x, y) in sorted(uh.get().items()):
+			y_str = []
+			for idx in uh.get_keys():
+				y_info = y.get(idx, {})
+				if y_info:
+					tmp = y_fmt % y_info.pop('y')
+					def fmt_error(err):
+						ep_str = y_fmt % err[0]
+						em_str = y_fmt % err[1]
+						if ep_str == em_str:
+							return ep_str
+						return '+%s,-%s' % (ep_str, em_str)
+					if 'ye' in y_info:
+						tmp += ' ' + fmt_error(y_info.pop('ye'))
+					y_err_list = sorted(y_info.keys())
+					if yerr_list_order:
+						y_err_list = map(lambda x: x.split('_')[-1], yerr_list_order)
+					sys_tmp = map(lambda key: 'DSYS=%s:%s' % (fmt_error(y_info[key]), key), y_err_list)
+					if sys_tmp:
+						tmp += ' +- (' + str.join(',', sys_tmp) + ')'
+				else:
+					tmp = ''
+				y_str.append(tmp)
+			output.append('%s TO %s ; %s' % (x_fmt % x[0], x_fmt % x[1], str.join(' ; ', y_str)))
+		writeData(str.join(' : ', 'x'*len(xheader) + 'y'*len(yheader)), output)
+
+	if style == 1:
+		xheader = [hepdata_info.get('xheader')]
+		yheader = []
+		for plot in plots:
+			yheader.append('%s(%s)' % (hepdata_info.get('yheader'), plot.get('label', '')))
+		writeHeader(str.join(' : ', xheader), str.join(' : ', yheader))
+
+		uh = UncertaintyHolder()
+		output_data = {}
+		for i, plot in enumerate(plots):
+			plot_param = dict(plot)
+			plot_param.update(opts.get('plots', {}))
+			plot_data = parsePlotData(plot_param)
+			for (xl, xh, y, yel, yeh) in zip(plot_data['x_low'], plot_data['x_high'], plot_data['y'], plot_data['ye'][0], plot_data['ye'][1]):
+				xr = opts.get('xrange')
+				if xr:
+					if xl < xr[1]:
+						uh.set((xl, xh), **{str(i): {'y': y, 'ye': (yeh, yel)}})
+				else:
+					uh.set((xl, xh), **{str(i): {'y': y, 'ye': (yeh, yel)}})
+		writeUHData(xheader, yheader, uh)
+
+	elif style == 2:
+		y_err_list = hepdata_info.get('yerr')
+		xheader = [hepdata_info.get('xheader')]
+		yheader = []
+		for plot in plots:
+			yheader.append('%s(%s)' % (hepdata_info.get('yheader'), plot.get('label', '')))
+		writeHeader(str.join(' : ', xheader), str.join(' : ', yheader))
+
+		uh = UncertaintyHolder()
+		output_data = {}
+		for i, plot in enumerate(plots):
+			plot_param = dict(plot)
+			plot_param.update(opts.get('plots', {}))
+			for y_err in y_err_list:
+				plot_param['esrc'] = y_err
+				plot_data = parsePlotData(plot_param)
+				for (xl, xh, y, yel, yeh) in zip(plot_data['x_low'], plot_data['x_high'], plot_data['y'], plot_data['ye'][0], plot_data['ye'][1]):
+					y_err = y_err.split('_')[-1]
+					xr = opts.get('xrange')
+					if xr:
+						if xl < xr[1]:
+							uh.set((xl, xh), **{str(i): {'y': y, y_err: (yeh, yel)}})
+					else:
+						uh.set((xl, xh), **{str(i): {'y': y, y_err: (yeh, yel)}})
+		print uh.get()
+		writeUHData(xheader, yheader, uh, y_err_list)
+
+
+def savePlotEx(fig, fn, opts, plots):
+	if fn.endswith('.png'):
+		opts['formats'] = ['png']
+		fn = fn[:-4]
+	if fn.endswith('.pdf'):
+		opts['formats'] = ['pdf']
+		fn = fn[:-4]
+	if fn.endswith('.hepdata'):
+		opts['formats'] = ['hepdata']
+		fn = fn[:-8]
+	formats = opts.get('formats', ['png', 'pdf', 'hepdata'])
+#	formats = ['png']
+	kwargs = opts.get('output_opts', {})
+	if 'hepdata' in formats:
+		formats.remove('hepdata')
+		saveHEPDATA(fn, opts, plots)
+	savePlot(fig, fn, formats, **kwargs)

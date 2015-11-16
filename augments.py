@@ -1,20 +1,24 @@
 import matplotlib
 
+def parseAnnotation(note_entry, opts):
+	note = dict(opts)
+	if isinstance(note_entry, str):
+		xp, yp, text = note_entry.split(',', 2)
+		note.update({'x': xp, 'y': float(yp), 'label': text})
+		if xp.startswith('r'):
+			note.setdefault('ha', 'right')
+			note['x'] = float(xp[1:])
+		else:
+			note['x'] = float(xp)
+		note.setdefault('transform', 'axis')
+	else:
+		note.update(note_entry)
+	return note
+
+
 def drawAnnotation(ax, notelist, opts = {}):
 	for note_entry in notelist:
-		note = dict(opts)
-		if isinstance(note_entry, str):
-			xp, yp, text = note_entry.split(',', 2)
-			note.update({'x': xp, 'y': float(yp), 'label': text})
-			if xp.startswith('r'):
-				note.setdefault('ha', 'right')
-				note['x'] = float(xp[1:])
-			else:
-				note['x'] = float(xp)
-			note.setdefault('transform', 'axis')
-		else:
-			note.update(note_entry)
-
+		note = parseAnnotation(note_entry, opts)
 		tf = ax.transAxes
 		if note.pop('transform', 'axis') == 'data':
 			tf = ax.transData

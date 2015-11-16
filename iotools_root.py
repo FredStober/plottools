@@ -258,19 +258,19 @@ def rootobj2dict(obj, plot):
 		objclass = "Not found"
 	if objclass.startswith("TH1"):
 		histo = TH1DWrapper(obj)
-		return {'x': histo.x(), 'xe': histo.xe(), 'y': histo.y(), 'ye': histo.ye()}
+		return {'x': histo.x(), 'xe': histo.xe(), 'y': histo.y(), 'ye': histo.ye(), 'N': obj.GetEntries()}
 	elif objclass.startswith("TH2"):
 		histo = TH2DWrapper(obj)
 		return {'x': histo.x(), 'y': histo.y(), 'z': histo.z(),
-			'xe': histo.xe(), 'ye': histo.ye(), 'ze': histo.ze()}
+			'xe': histo.xe(), 'ye': histo.ye(), 'ze': histo.ze(), 'N': obj.GetEntries()}
 	elif objclass.startswith("TProfile"):
 		obj.SetErrorOption("S")
 		histo = TProfileWrapper(obj)
-		return {'x': histo.x(), 'xe': histo.xe(), 'y': histo.y(), 'ye': histo.ye()}
+		return {'x': histo.x(), 'xe': histo.xe(), 'y': histo.y(), 'ye': histo.ye(), 'N': obj.GetEntries()}
 	elif objclass.startswith("TGraph"):
 		histo = TGraphWrapper(obj)
 		return {'x': histo.x(), 'xe': [histo.xel(), histo.xeh()],
-			'y': histo.y(), 'ye': [histo.yel(), histo.yeh()]}
+			'y': histo.y(), 'ye': [histo.yel(), histo.yeh()], 'N': obj.GetN()}
 	else:
 		s = "==>> Unsupported object: %s (%s) <<==" % (plot, objclass)
 		print "=" * len(s)

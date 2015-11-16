@@ -24,10 +24,12 @@ def setCMSsettings(opts):
 
 
 def doCMSPlot(fn, opts, plots, **kwargs):
+	opts = dict(opts)
 	setCMSsettings(opts)
 	doPlot(fn, opts, plots, **kwargs)
 
 
 def doCMS2DPlot(fn, opts, src):
+	opts = dict(opts)
 	setCMSsettings(opts)
 	do2DPlot(fn, opts, src)

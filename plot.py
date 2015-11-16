@@ -43,7 +43,7 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 	drawLines(base_ax, kwargs.get('lines', []), **opts_raw.get('lines', {}))
 	if kwargs.get('fun'):
 		kwargs.get('fun')(base_ax)
-	savePlot(fig, fn, opts_raw.get('formats', ['png', 'pdf']))
+	savePlotEx(fig, fn, opts_raw, plots)
 
 
 def get2DXYZ(opts, src):
@@ -67,6 +67,7 @@ def get2DXYZ(opts, src):
 
 
 def do2DPlot(fn, opts, src):
+	opts = dict(opts)
 	(fig, ax) = setupPlot(opts)
 	setupAxis(ax, opts)
 	drawInfoText(opts, ax)
@@ -125,7 +126,7 @@ def do2DPlot(fn, opts, src):
 					p_y = (y[i] + y[i + 1]) / 2.
 				if (p_x < ax.get_xlim()[0]) or (p_y < ax.get_ylim()[0]) or (p_x > ax.get_xlim()[1]) or (p_y > ax.get_ylim()[1]):
 					continue
-				ax.text(p_x, p_y, '%.1f' % v, ha = 'center', va = 'center', fontsize = 6)
+				ax.text(p_x, p_y, ('%.' + str(opts.get('zprec', 1)) + 'f') % v, ha = 'center', va = 'center', fontsize = 6)
 #				print i, j, v, p_x, p_y
 #		print x.shape, x
 #		print y.shape, y
@@ -172,7 +173,7 @@ def do2DPlot(fn, opts, src):
 	else:
 		drawAnnotation(ax, opts.get('notes', []))
 	drawLines(ax, opts.get('lines', {}))
-	savePlot(fig, fn, opts.get('formats', ['png', 'pdf']), **opts.get('output_opts', {}))
+	savePlotEx(fig, fn, opts, plots)
 
 #	if showErrors:
 #		ax2 = fig.add_axes((0.15, 0.1, 0.72*(1-0.05-0.02), 0.2), xlim = opts.get('xrange'), ylim = opts.get('y2range'))

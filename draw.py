@@ -85,15 +85,14 @@ def drawBand(ax, plot, plot_data):
 		facecolor = band_color, edgecolor = plot.get('bandedge_color', band_color),
 		alpha = plot.get('band_alpha', plot.get('alpha')),
 		hatch = plot.get('hatch'),
-		linewidth = linewidth, linestyle = linestyle, label = plot.get('label'),
+		linewidth = linewidth,
+		linestyle = linestyle,
+		label = plot.get('label'),
 	)
 	return result
 
 
-def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
-	plot = dict(opts)
-	plot.update(plot_raw)
-
+def parsePlotData(plot):
 	def ensureArray(arr):
 		if isinstance(arr, list):
 			return numpy.array(arr)
@@ -117,23 +116,40 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 	else:
 		plot_data['ye'] = plot_zero
 
-	if xy_switch:
-		plot_data = {'x': plot_data['y'], 'xe': plot_data['ye'], 'y': plot_data['x'], 'ye': plot_data['xe']}
-
 	# Expand data (eg. asymmetric error bars)
-	def expandData(key, scale, lower_limit):
+	def expandData(key):
 		if plot_data[key + 'e'].ndim == 2:
 			(e_high, e_low) = (plot_data[key + 'e'][0], plot_data[key + 'e'][1])
 		else:
 			(e_high, e_low) = (plot_data[key + 'e'], plot_data[key + 'e'])
-		if scale == 'log': # handle zero/subzero lower limits => only go to edge of axis
-			e_low = numpy.where(e_low > plot_data[key], plot_data[key] - lower_limit, e_low)
-		# ATTENTION: for plotting we need (-/+) but user input is (+/-)
 		plot_data[key + 'e'] = numpy.array([e_low, e_high])
 		plot_data[key + '_high'] = numpy.ma.masked_invalid(plot_data[key] + e_high)
 		plot_data[key + '_low']  = numpy.ma.masked_invalid(plot_data[key] - e_low)
-	expandData('x', ax.get_xscale(), ax.get_xlim()[0])
-	expandData('y', ax.get_yscale(), ax.get_ylim()[0])
+	expandData('x')
+	expandData('y')
+	return plot_data # ATTENTION: for plotting we need err=(-/+) but user input is err=(+/-)
+
+
+def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
+	plot = dict(opts)
+	plot.update(plot_raw)
+	plot_data = parsePlotData(plot) # output: err = (-/+)
+	# limit lower values for log plots
+	def limitRange(key, scale, lower_limit):
+		e_low = plot_data[key + 'e'][0]
+		if scale == 'log': # handle zero/subzero lower limits => only go to edge of axis
+			e_low = numpy.where(e_low > plot_data[key], plot_data[key] - lower_limit, e_low)
+		plot_data[key + 'e'] = numpy.array([e_low, plot_data[key + 'e'][1]])
+		plot_data[key + '_low']  = numpy.ma.masked_invalid(plot_data[key] - e_low)
+	limitRange('x', ax.get_xscale(), ax.get_xlim()[0])
+	limitRange('y', ax.get_yscale(), ax.get_ylim()[0])
+	# Switch x-y coords
+	if xy_switch:
+		plot_data_new = {}
+		for (prefix_old, prefix_new) in [('x', 'y'), ('y', 'x')]:
+			for key in ['', 'e', '_low', '_high']:
+				plot_data_new[prefix_new + key] = plot_data[prefix_old + key]
+		plot_data = plot_data_new
 
 	# "Steppize" data
 	if 'preset' in plot:
@@ -189,7 +205,7 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 		plot_raw['vis'] = [drawBand(ax, plot, plot_data), drawLine(ax, plot, plot_data, y_key = 'y')]
 
 	if plotstyle.startswith('bar'):
-		islog = (opts.get('yscale', 'linear') == 'log')
+		islog = (plot.get('yscale', 'linear') == 'log')
 		plot_raw['vis'] = ax.bar(plot_data['x_low'], plot_data['y'], plot_data['xe'][0] + plot_data['xe'][1],
 			color = plot.get('color'), alpha = plot.get('alpha'), label = plot.get('label'),
 			log = islog, linewidth = plot.get('linewidth', 0),
