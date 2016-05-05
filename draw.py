@@ -198,6 +198,13 @@ def drawPlot(ax, plot_raw, opts = {}, xy_switch = False):
 		plot_raw['vis'].extend(drawLine(ax, plot, plot_data, y_key = 'y_low'))
 		plot_raw['vis'].extend(drawLine(ax, plot, plot_data, y_key = 'y_high'))
 
+	if plotstyle == 'outline1':
+		plot_raw['vis'] = MultiLineContainer()
+		plot.setdefault('fmt', '')
+		plot_raw['vis'].extend(drawLine(ax, plot, plot_data, y_key = 'y_low'))
+		plot_raw['vis'].extend(drawLine(ax, plot, plot_data, y_key = 'y'))
+		plot_raw['vis'].extend(drawLine(ax, plot, plot_data, y_key = 'y_high'))
+
 	if plotstyle == 'band':
 		plot_raw['vis'] = drawBand(ax, plot, plot_data)
 

@@ -135,8 +135,8 @@ def do2DPlot(fn, opts, src):
 	if 'contourf' in mode:
 		opts.setdefault('raw_data', True)
 		(x, y, z) = get2DXYZ(opts, src)
-		cmesh = ax.contourf(x, y, z, alpha = 1, norm = norm,
-			linestyles = level_style, levels = level_pos, colors = level_color)
+		cmesh = ax.contourf(x, y, z, alpha = 1, norm = norm, nchunks = opts.get('chunks'),
+			linestyles = level_style, levels = level_pos, cmap = zcolor)
 	elif 'contour' in mode:
 		opts.setdefault('raw_data', True)
 		(x, y, z) = get2DXYZ(opts, src)
@@ -173,7 +173,7 @@ def do2DPlot(fn, opts, src):
 	else:
 		drawAnnotation(ax, opts.get('notes', []))
 	drawLines(ax, opts.get('lines', {}))
-	savePlotEx(fig, fn, opts, plots)
+	savePlotEx(fig, fn, opts, plots = None)
 
 #	if showErrors:
 #		ax2 = fig.add_axes((0.15, 0.1, 0.72*(1-0.05-0.02), 0.2), xlim = opts.get('xrange'), ylim = opts.get('y2range'))

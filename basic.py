@@ -70,7 +70,11 @@ def setupAxis_single_style(ax, ax_int, opts, prefix, scale):
 
 	elif style == 'linear':
 		opts.setdefault(prefix + 'format', 'f')
-		ax_int.set_major_locator(matplotlib.ticker.AutoLocator())
+		ticks = opts.get(prefix + 'ticks', None)
+		if ticks == None:
+			ax_int.set_major_locator(matplotlib.ticker.AutoLocator())
+		elif ticks == 'int':
+			ax_int.set_major_locator(matplotlib.ticker.MultipleLocator())
 		ax_int.set_minor_locator(matplotlib.ticker.AutoMinorLocator(n = opts.get(prefix + 'minor')))
 
 	elif style.startswith('pi'):
@@ -363,7 +367,7 @@ def saveHEPDATA(fn, opts, plots):
 		writeUHData(xheader, yheader, uh, y_err_list)
 
 
-def savePlotEx(fig, fn, opts, plots):
+def savePlotEx(fig, fn, opts, plots = None):
 	if fn.endswith('.png'):
 		opts['formats'] = ['png']
 		fn = fn[:-4]
