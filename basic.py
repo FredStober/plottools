@@ -75,6 +75,8 @@ def setupAxis_single_style(ax, ax_int, opts, prefix, scale):
 			ax_int.set_major_locator(matplotlib.ticker.AutoLocator())
 		elif ticks == 'int':
 			ax_int.set_major_locator(matplotlib.ticker.MultipleLocator())
+		else:
+			ax_int.set_major_locator(matplotlib.ticker.MaxNLocator(nbins = ticks))
 		ax_int.set_minor_locator(matplotlib.ticker.AutoMinorLocator(n = opts.get(prefix + 'minor')))
 
 	elif style.startswith('pi'):
