@@ -94,7 +94,7 @@ def setupAxis_single_style(ax, ax_int, opts, prefix, scale):
 				return '$-\pi$'
 			return '$\pi$'
 	if format == 'e':
-		ax_int.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, y: format_exp(x)))
+		ax_int.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, y: format_exp(x, prec=opts.get(prefix + 'prec', 1))))
 	if format == 'date':
 		fmtstr = opts.get(prefix + 'datefmt', '%Y-%m-%d')
 		ax_int.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda x, y: time.strftime(fmtstr, time.localtime(x))))
