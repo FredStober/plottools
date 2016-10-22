@@ -11,8 +11,19 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 
 	base_ax = ax
 
+	if 'area' in opts:
+		for entry in opts['area']:
+			drawArea(base_ax, **entry)
+
 	plots = map(dict, plots) # convert PlotEntries to dictionaries
 	base_ax2 = None
+	if 'x2range' in opts:
+		base_ax2 = base_ax.twiny()
+		setupAxis(base_ax2, opts, xprefix = 'x2')
+	if 'y2range' in opts:
+		base_ax2 = base_ax.twinx()
+		setupAxis(base_ax2, opts, yprefix = 'y2')
+
 	for p in plots:
 		if not p.get('data'):
 			continue
@@ -20,19 +31,9 @@ def doPlot(fn, opts_raw, plots, **kwargs):
 		if axis == 1:
 			drawPlot(ax, p, opts.get('plots', {}), opts.get('xy_switch', False))
 		elif axis == 2:
-			if not base_ax2:
-				xprefix = 'x'
-				yprefix = 'y'
-				if 'x2range' in opts:
-					xprefix = 'x2'
-					base_ax2 = base_ax.twiny()
-				if 'y2range' in opts:
-					yprefix = 'y2'
-					base_ax2 = base_ax.twinx()
-				setupAxis(base_ax2, opts, xprefix = xprefix, yprefix = yprefix)
-			drawPlot(base_ax, p, opts.get('plots2', opts.get('plots', {})), opts.get('xy_switch', False))
+			drawPlot(base_ax2, p, opts.get('plots2', opts.get('plots', {})), opts.get('xy_switch', False))
 
-	drawLegend(base_ax, plots, opts)
+	drawLegend(base_ax2 or base_ax, plots, opts)
 	if 'notesize' in opts:
 		drawAnnotation(base_ax, opts.get('notes', []), {'fontsize': opts.get('notesize')})
 	else:
